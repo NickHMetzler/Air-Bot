@@ -1,6 +1,6 @@
 # Air Bot
 
-    This is a Bot designed to play the Kfir Canard automatically. It automatically plays the game and bombs bases to generate silver lions and research points. Please follow the instructions below to set up and use the bot effectively.
+   This is a Bot designed to play the Kfir Canard automatically. It automatically plays the game and bombs bases to generate silver lions and research points. Please follow the instructions below to set up and use the bot effectively.
 
 ## Installation
 
@@ -28,13 +28,13 @@
 
 ### Important Notes
 
-    The Bot is intended for personal use only. Do not use it for any malicious or unfair purposes.
-    Ensure that you have the latest version of the game installed on your computer for optimal compatibility.
+   The Bot is intended for personal use only. Do not use it for any malicious or unfair purposes.
+   Ensure that you have the latest version of the game installed on your computer for optimal compatibility.
 
 ### Disclaimer
 
-    The Bot is a third-party tool and is not officially affiliated with or endorsed by Gaijin Entertainment, the developer. The use of this bot is at your own risk, and the developers and contributors are not responsible for any consequences resulting from its usage.
+   The Bot is a third-party tool and is not officially affiliated with or endorsed by Gaijin Entertainment, the developer. The use of this bot is at your own risk, and the developers and contributors are not responsible for any consequences resulting from its usage.
 
 ### Contributions
 
-    Contributions to the Bot is welcome! If you encounter any issues or have suggestions for enhancements, please submit them via the GitHub repository's issue tracker.
+   Contributions to the Bot is welcome! If you encounter any issues or have suggestions for enhancements, please submit them via the GitHub repository's issue tracker.
