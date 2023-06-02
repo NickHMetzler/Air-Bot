@@ -4,28 +4,26 @@ This is a War Thunder Bot designed to play the Kfir Canard automatically. It aut
 
 ## Installation
 
-    Download the latest release of the War Thunder Bot from the GitHub repository.
-    Extract the downloaded files to a convenient location on your computer.
+    1. Download the latest release of the War Thunder Bot from the GitHub repository.
+    2. Extract the downloaded files to a convenient location on your computer.
 
 ## Setup
 
-    Open the keybinds.txt file in a text editor.
-    Review the default keybinds provided and modify them as needed to match your preferred settings in War Thunder.
-    Save the keybinds.txt file.
+   1. Open the `keybinds.txt` file in a text editor.
+   2. Review the default keybinds provided and modify them as needed to match your preferred settings in War Thunder.
+   3. Save the `keybinds.txt` file.
 
 ## Chat Phrases Configuration
 
-    Open the chatphrases.txt file in a text editor.
+    Open the `chatphrases.txt` file in a text editor.
     Customize the chat phrases that the bot will send during gameplay.
     Each phrase should be written on a new line.
-    Save the chatphrases.txt file.
+    Save the `chatphrases.txt` file.
 
 ## Usage
 
-    Run the executable or Python file as Administrator to avoid any errors.
-    Follow the on-screen instructions to start the bot.
-    The bot will automatically start playing the game for you.
-    During gameplay, the bot will periodically send chat messages according to the configured phrases.
+    1. Run the executable or Python file as Administrator to avoid any errors.
+    2. Follow the on-screen instructions to start the bot.
     To stop the bot, press and hold the q key for a second.
 
 ### Important Notes
