@@ -14,6 +14,7 @@ import ctypes
 import random
 import os
 import threading
+import cv2
 
 # Allow the use of relative paths
 os.chdir(os.path.dirname(__file__))
@@ -176,6 +177,24 @@ ctypes.pointer(extra) )
 #   Functions   #
 #################
 
+# find the position of an image
+def find_image_position(template_path, screenshot_path):
+    template = cv2.imread(template_path, 0)
+    screenshot = cv2.imread(screenshot_path, 0)
+
+    result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
+    _, max_val, _, max_loc = cv2.minMaxLoc(result)
+
+    return max_loc
+
+# calculate the distance on screen of 2 images
+def calculate_distance(image1_path, image2_path, screenshot_path):
+    image1_pos = find_image_position(image1_path, screenshot_path)
+    image2_pos = find_image_position(image2_path, screenshot_path)
+
+    distance = ((image2_pos[0] - image1_pos[0]) ** 2 + (image2_pos[1] - image1_pos[1]) ** 2) ** 0.5
+    return distance
+
 # End Program
 def end_program():
     # Send the signal to terminate the program
@@ -284,41 +303,58 @@ def bot():
 
         time.sleep(np.random.uniform(0.5,0.7))
 
-        # Wait to Spawn in
-        print('CONSOLE: Waiting to Spawn In')
-        while pyautogui.locateOnScreen('assets/cancel.png', grayscale=False, confidence=0.7) != None:
-            pass
+        if pyautogui.locateOnScreen('assets/city.png', grayscale=False, confidence=0.8) != None:
+            is_city = True
+        else:
+            is_city = False
 
         # Get current time
         battle_time = time.time()
 
-        # Picth values
-        pitch_value = 368
-        downVal = int(pitch_value/92)
+        if is_city == False:
+            # Wait to Spawn in
+            print('CONSOLE: Waiting to Spawn In')
+            while pyautogui.locateOnScreen('assets/cancel.png', grayscale=False, confidence=0.7) != None:
+                pass
+            # Pitch values
+            pitch_value = 368
+            downVal = int(pitch_value/8)
 
-        # Throttle up, then pitch up
-        holdFor('w', 4)
-        move_mouse_by(0, -pitch_value)
+            # Throttle up, then pitch up
+            holdFor('w', 4)
+            move_mouse_by(0, -pitch_value)
         
-        # Start CCRP and choose base
-        print('CONSOLE: Activating CCRP')
-        press(KEYBINDS['ccrp'])
+            # Start CCRP and choose base
+            print('CONSOLE: Activating CCRP')
+            press(KEYBINDS['ccrp'])
 
-        while get_elapsed_time(battle_time) < 29.0:
-            pass
-        # Retract gear
-        press(KEYBINDS['gear'])
+            while get_elapsed_time(battle_time) < 45.0:
+                pass
+            print('Done waiting!!!')
+            # Retract gear
+            press(KEYBINDS['gear'])
 
-        while get_elapsed_time(battle_time) < 42.0:
-            pass
-
-        # Slowly pitch the plane back to level
-        while get_elapsed_time(battle_time) < 88.0:
-            move_mouse_by(0, downVal)
-            time.sleep(1)
+            press(KEYBINDS['ccrp'])
+            while pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7) == None:
+                pass
+            
+            # Slowly pitch the plane back to level
+            for i in range(5):
+                move_mouse_by(0, downVal)
+                time.sleep(1)
+        else:
+            # Wait to Spawn in
+            print('CONSOLE: Waiting to Spawn In')
+            while pyautogui.locateOnScreen('assets/cancel.png', grayscale=False, confidence=0.7) != None:
+                pass
+            press('w')
+            # Start CCRP and choose base
+            print('CONSOLE: Activating CCRP')
+            press(KEYBINDS['ccrp'])
 
         # 60% chance that the bot will Chat this game
         choice = random.randint(0, 10)
+        choice = 10
         if choice <= 6 and phrase_count >= 0:
             chat_flag = False
             # Set the Chat to All
@@ -330,14 +366,15 @@ def bot():
         else:
             chat_flag = True
 
-        # For testing purposes 
-        chat_flag = True
-
         # Set variables for game loop
         battle_time = time.time()
-        time_report = 0
+        time_report = 1
         zoom_time = 0
         zoom_flag = False
+        brake_flag = False
+
+        
+    
         hold(KEYBINDS['bomb'])
 
         # Bombing loop
@@ -345,7 +382,7 @@ def bot():
             
             # Report the time every 20 cycles
             if time_report >= 20:
-                time_report = 0
+                time_report = -1
             elif time_report == 0:
                 # Print how long the bot ahs been in a match
                 current_time = time.time()
@@ -362,7 +399,7 @@ def bot():
                 random_chat()
 
             # Locate the CCRP line and move the mouse towards it
-            location = pyautogui.locateOnScreen('assets/baseline.png', grayscale=False, confidence=0.6)
+            location = pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7)
             if location is not None:
                 center_x, center_y= pyautogui.center(location)
                 
@@ -378,17 +415,39 @@ def bot():
                 break
 
             # Wait 10 cycles before zooming in
-            if zoom_time < 10 or zoom_flag == False:
+            if zoom_time < 10 or zoom_flag == True:
                 zoom_time += 1
             else:
                 press(KEYBINDS['zoom'])
                 zoom_flag = True
 
+            if brake_flag == False and zoom_flag == True:
+                # Define the coordinates of the region of interest
+                x = 1242  # X-coordinate of the top-left corner
+                y = 75  # Y-coordinate of the top-left corner
+                width = 76  # Width of the region
+                height = 300  # Height of the region
+
+                # Capture a screenshot of the specified region
+                screenshot = pyautogui.screenshot(region=(x, y, width, height))
+                screenshot.save('assets/screenshot.png')
+                if calculate_distance('assets/baseline.png', 'assets/bombsight.png', 'assets/screenshot.png') <= 10:
+                    press(KEYBINDS['airbrake'])
+                    brake_flag == True
+                    for i in range(6):
+                        pyautogui.scroll(-1)
+                        time.sleep(np.random.uniform(0.2,0.5))
+                        
+
+
+
         #  After Bombing pitch up and bait enemies
+        press(KEYBINDS['zoom'])
         press(KEYBINDS['smoke'])
+        press(KEYBINDS['airbrake'])
         move_mouse_by(0, -200)
         while pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None:
-            move_mouse_by(5, 0)
+            move_mouse_by(10, 0)
             time.sleep(np.random.uniform(1.2,1.7))
 
         # Vehicle has been destroyed
@@ -413,6 +472,8 @@ def bot():
                 clicked = click_button('assets/to_hangar.png')
 
 
+#Operation Spain 1052m, 1 check
+#Operation Vietnam 670m, 2 check
 title_banner = """
   _   _ ___ ____ _  ______   __        ___    ____    _____ _   _ _   _ _   _ ____  _____ ____    ____   ___ _____   _   _ 
  | \ | |_ _/ ___| |/ / ___|  \ \      / / \  |  _ \  |_   _| | | | | | | \ | |  _ \| ____|  _ \  | __ ) / _ \_   _| / | / |
