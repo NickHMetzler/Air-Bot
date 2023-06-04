@@ -16,6 +16,7 @@ import os
 import threading
 import requests
 import json
+import math
 
 # Allow the use of relative paths
 os.chdir(os.path.dirname(__file__))
@@ -28,24 +29,24 @@ for file in os.listdir(script_folder):
 # PyAutoGui Failsafe off
 pyautogui.FAILSAFE = False
 
-game_stats = []
-
-MAPS = {
+# Cruising Altitude for each Map
+HEIGHTS = {
     'GolanHeights' : 560,
     'Sinai' : 150,
     'Spain1' : 1100,
     'Spain2' : 1100,
     'Vietnam1' : 850,
-    'city' : 0,
+    'city' : 850,
     'Vietnam2' : 0
 }
-
+# Bombing Distances for each Map
 DISTANCES = {
-    'GolanHeights' : 0,
-    'Sinai' : 0,
-    'Spain1' : 0,
-    'city' : 0,
-    'Vietnam1' : 0.06940799999999997,
+    'GolanHeights' : 0.05,
+    'Sinai' : 0.065,
+    'Spain1' : 0.075,
+    'Spain2' : 0.075,
+    'city' : 0.09,
+    'Vietnam1' : 0.07,
     'Vietnam2' : 0
 }
 
@@ -118,7 +119,11 @@ KEYS = {
   'f9': 0x43,
   'f10': 0x44,
   'f11': 0x57,
-  'f12': 0x58}
+  'f12': 0x58,
+  'up': 0x48,
+  'right': 0x4D,
+  'left': 0x4B,
+  'down': 0x50}
 
 # Get User's KeyBinds from file
 with open('keybinds.txt', 'r') as file:
@@ -127,7 +132,6 @@ with open('keybinds.txt', 'r') as file:
 
 # Evaluate the contents as Python code
 KEYBINDS = eval(contents)
-
 
 # Phrases that can be typed in chat
 phrase_count = -1
@@ -196,9 +200,9 @@ ctypes.pointer(extra) )
 #################
 #   Functions   #
 #################
-
+# Returns the current Height and Rate of Climb
 def get_attitude():
-    url = 'http://localhost:8111/state'  # Replace with your URL
+    url = 'http://localhost:8111/state'
     response = requests.get(url)
 
     if response.status_code == 200:
@@ -207,11 +211,12 @@ def get_attitude():
 
         # Access the value of "H, m"
         return_data = (json_data["H, m"], json_data["Vy, m/s"])
-        print(f'AoA is: {return_data}')
+        print(f'Height is: {return_data[0]}m\nRate of Climb is: {return_data[1]}')
         return return_data
 
-def get_distance():
-    url = 'http://localhost:8111/map_obj.json'  # Replace with your URL
+# Returns the distance from the Base
+def get_distance(ec_mapa):
+    url = 'http://localhost:8111/map_obj.json'  
     response2 = requests.get(url)
 
     if response2.status_code == 200:
@@ -229,29 +234,38 @@ def get_distance():
                 points.append(obj["x"])
         
         points_sorted = sorted(set(points))  # Remove duplicates and sort the values
-        points_sorted[1] 
+        if ec_mapa == True:
+            index = 3
+        else:
+            index = 1
+        chosen_point = points_sorted[index] 
         for obj in json_data:
-            if obj["type"] == "bombing_point" and obj["x"] == points_sorted[1]:
+            if obj["type"] == "bombing_point" and obj["x"] == chosen_point:
                 point_x = obj["x"]
                 point_y = obj["y"]
 
-        distance = (x - point_x, y - point_y)
-        distance_total = distance[0] + distance[1]
-        print(f'Distance is: {distance}\nTotal is: {distance_total}')
-        if distance[0] + distance[1] <= 0.063408:
-            print("BRAKE NOW")
+        distance = math.sqrt((x - point_x)**2 + (y - point_y)**2)
+        print(f'Distance from the base is: {distance}')
+        return distance
+
+# Returns the speed in Mach
+def get_mach():
+    url = 'http://localhost:8111/indicators'  # Replace with your URL
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        # Parse the JSON string
+        json_data = json.loads(response.text)
+
+        # Access the value of "H, m"
+        return_data = json_data["mach"]
+        print(f'Plane is at Mach {return_data}')
+        return return_data
 
 # End Program
 def end_program():
     # Send the signal to terminate the program
     os.kill(os.getpid(), 9)
-
-def move_mouse_randomly():
-  # Move the mouse randomly a few times
-  for _ in range(random.randint(3, 6)):
-    move_mouse_by(x=random.randint(-250, 250), y=random.randint(-10, 15))
-    # Wait a little before moving the mouse again
-    time.sleep(random.uniform(0.1, 0.5))
 
 def click_mouse():
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0) 
@@ -287,9 +301,18 @@ def click_button(image_path):
     button = pyautogui.locateCenterOnScreen(image_path, grayscale=False, confidence=0.75)
     if button != None:
         move_mouse_to(button[0], button[1])
-        time.sleep(np.random.uniform(0.5,0.7))
+        time.sleep(np.random.uniform(0.9,1.2))
         click(button[0], button[1])
         button = pyautogui.locateCenterOnScreen(image_path, grayscale=False, confidence=0.75)
+        return True
+    else:
+        return False
+
+def move_mouse_to_image(image_path):
+    image = pyautogui.locateCenterOnScreen(image_path, grayscale=False, confidence=0.75)
+    if image != None:
+        move_mouse_to(image[0], image[1])
+        time.sleep(np.random.uniform(0.9,1.2))
         return True
     else:
         return False
@@ -348,33 +371,39 @@ def bot():
         print("CONSOLE: Spawn Button Clicked") 
 
         time.sleep(np.random.uniform(0.5,0.7))
+
+        # Figure out which map
         if pyautogui.locateOnScreen('assets/vietnam.png', grayscale=False, confidence=0.95) != None:
             map = 'Vietnam1'
+            ec_map = False
         elif pyautogui.locateOnScreen('assets/golan_heights.png', grayscale=False, confidence=0.95) != None:
             map = 'GolanHeights'
+            ec_map = False
         elif pyautogui.locateOnScreen('assets/spain1.png', grayscale=False, confidence=0.95) != None:
             map = 'Spain1'
+            ec_map = False
         elif pyautogui.locateOnScreen('assets/spain2.png', grayscale=False, confidence=0.95) != None:
             map = 'Spain2'
-        elif pyautogui.locateOnScreen('assets/spain1.png', grayscale=False, confidence=0.95) != None:
-            map = 'Spain1'
+            ec_map = True
+            # Ideally want to choose base 5 (Bases are 0-4)
         elif pyautogui.locateOnScreen('assets/sinai.png', grayscale=False, confidence=0.95) != None:
             map = 'Sinai'
+            ec_map = False
         elif pyautogui.locateOnScreen('assets/city.png', grayscale=False, confidence=0.95) != None:
             map = 'city'
-        height = MAPS[map]
-        #distance = DISTANCES[map]
-        # Get current time
-        battle_time = time.time()
+            ec_map = False
 
+        # Pitch values
+        pitch_value = 344
+        downVal = int(pitch_value/8)
+
+        # Take off/spawn procedure
+        battle_time = time.time()
         if map != 'city':
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn In')
             while pyautogui.locateOnScreen('assets/cancel.png', grayscale=False, confidence=0.7) != None:
                 pass
-            # Pitch values
-            pitch_value = 344
-            downVal = int(pitch_value/8)
 
             # Throttle up, then pitch up
             holdFor('w', 4)
@@ -386,22 +415,29 @@ def bot():
 
             while get_elapsed_time(battle_time) < 45.0:
                 pass
-            print('Done waiting!!!')
             # Retract gear
             press(KEYBINDS['gear'])
-
+            # Choose base target
             press(KEYBINDS['ccrp'])
             while pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7) == None:
                 pass
+            # Pitch down a few times
+            for i in range(3):
+                    move_mouse_by(0, downVal + 5)
+                    time.sleep(1)
             
         else:
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn In')
             while pyautogui.locateOnScreen('assets/cancel.png', grayscale=False, confidence=0.7) != None:
                 pass
+            # Afterburner
             press('w')
             # Start CCRP and choose base
+            time.sleep(5)
             print('CONSOLE: Activating CCRP')
+            press(KEYBINDS['ccrp'])
+            time.sleep(5)
             press(KEYBINDS['ccrp'])
 
         # 60% chance that the bot will Chat this game
@@ -425,29 +461,20 @@ def bot():
         zoom_flag = False
         brake_flag = False
         pitch_flag = False
+        mach_flag = False
+        map_distance = DISTANCES[map]
+        height = HEIGHTS[map]
         print(map)
         
-    
+        # Hold down the bombing button
         hold(KEYBINDS['bomb'])
 
         # Bombing loop
         while pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None:
             
-            # Report the time every 20 cycles
-            if time_report >= 20:
-                time_report = -1
-            elif time_report == 0:
-                # Print how long the bot ahs been in a match
-                current_time = time.time()
-                minutes, seconds = divmod(int(current_time - battle_time), 60)
-                if seconds <= 9:
-                    seconds = '0' + str(seconds)
-                print(f'CONSOLE: Playing Game...\nCONSOLE: Elapsed Time : {minutes}:{seconds}')
-            time_report += 1
-            
             # Type a message in chat
-            choice = random.randrange(0, phrase_count)
             if chat_flag == False:
+                # Temp variable
                 chat_flag = True
                 random_chat()
 
@@ -463,27 +490,50 @@ def bot():
                 # Calculate the distance between the target center and the screen's center
                 distance_x = int((center_x - screen_center_x)/5)
                 move_mouse_by(distance_x, 0)
-            #else:
-                #release(KEYBINDS['bomb'])
-                #break
+            elif brake_flag == True:
+                # Release the bombing button
+                release(KEYBINDS['bomb'])
+                break
 
-            # Wait 10 cycles before zooming in
-            if zoom_time >= 10 and zoom_flag == False:
+            # Wait 6 cycles before zooming in
+            if zoom_time >= 6 and zoom_flag == False:
                 press(KEYBINDS['zoom'])
                 zoom_flag = True
             zoom_time += 1
             
+            # Check if the airbrake can be deactivated
+            if brake_flag == True and mach_flag == False:
+                mach = get_mach()
+                if mach < 1.0:
+                    press(KEYBINDS['airbrake'])
+                    mach_flag = True
+
             # Slowly pitch the plane back to level
             attitude = get_attitude()
-            if pitch_flag == False and attitude[0] > height - 10:
-                for i in range(5):
+            if map != 'city' and pitch_flag == False and attitude[0] > height - 10:
+                for i in range(2):
                     move_mouse_by(0, downVal + 5)
                     time.sleep(1)
                 pitch_flag = True
             
-            # Get the attitude index 0 is the height in m, index 1 is the change in height
-            if pitch_flag == True:
-                if attitude[0] > height + 100 and attitude[1] > 0.0:
+            # Hit the airbrake and turn off afterburner when close to the base
+            distance = get_distance(ec_map)
+            if brake_flag == False and distance <= map_distance:
+                press(KEYBINDS['airbrake'])
+                pyautogui.scroll(-2) 
+                brake_flag = True
+
+            # Maintain level flight
+            if (map == 'city' or pitch_flag == True) and brake_flag == False:
+                if attitude[0] > height + 100 and attitude[1] > 15.0:
+                    move_mouse_by(0, 30)
+                elif attitude[0] < height and attitude[1] < -15.0:
+                    move_mouse_by(0, -30)
+                elif attitude[0] > height + 100 and attitude[1] > 5.0:
+                    move_mouse_by(0, 20)
+                elif attitude[0] < height and attitude[1] < -5.0:
+                    move_mouse_by(0, -20)
+                elif attitude[0] > height + 100 and attitude[1] > 0.0:
                     move_mouse_by(0, 7)
                 elif attitude[0] < height and attitude[1] < 0.0:
                     move_mouse_by(0, -7)
@@ -492,25 +542,24 @@ def bot():
                 elif attitude[0] < height + 100 and attitude[0] > height and attitude[1] < -0.1:
                     move_mouse_by(0, -7)
             
-            get_distance()
-
-
         #  After Bombing pitch up and bait enemies
-        press(KEYBINDS['zoom'])
+        time.sleep(1)
         press(KEYBINDS['smoke'])
-        press(KEYBINDS['airbrake'])
         move_mouse_by(0, -200)
         while pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None:
-            move_mouse_by(10, 0)
+            move_mouse_by(150, 0)
             time.sleep(np.random.uniform(1.2,1.7))
 
         # Vehicle has been destroyed
         if pyautogui.locateCenterOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.75) != None:
             print('CONSOLE: Aircraft Downed, Returning to Hangar')
             # Click 'Return To Hangar' Button
-            clicked = False
-            while clicked == False:
-                clicked = click_button('assets/return_to_hangar.png')
+            move_mouse_to_image('assets/return_to_hangar.png')
+            press('esc')
+            press('up')
+            press('enter')
+            press('left')
+            press('enter')
             time.sleep(np.random.uniform(20,30))
 
             # Click 'To Hangar' Button
@@ -521,9 +570,7 @@ def bot():
         else:
             print('CONSOLE: Match Ended, Returning to Hangar')
             # Click 'To Hangar' Button
-            clicked = False
-            while clicked == False:
-                clicked = click_button('assets/to_hangar.png')
+            press('esc')
 
 
 #Operation Spain 1052m, 1 check
