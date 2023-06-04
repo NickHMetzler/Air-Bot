@@ -14,7 +14,8 @@ import ctypes
 import random
 import os
 import threading
-import cv2
+import requests
+import json
 
 # Allow the use of relative paths
 os.chdir(os.path.dirname(__file__))
@@ -28,6 +29,14 @@ for file in os.listdir(script_folder):
 pyautogui.FAILSAFE = False
 
 game_stats = []
+
+MAPS = {
+    'GolanHeights' : 560,
+    'Sinai' : 150,
+    'Spain' : 1070,
+    'Vietnam' : 800,
+    'city' : 0
+}
 
 # Char/Str to Scancode for Bot Game Inputs
 # https://kbdlayout.info/kbdusx/scancodes
@@ -176,24 +185,28 @@ ctypes.pointer(extra) )
 #################
 #   Functions   #
 #################
+def get_height():
+    url = 'http://localhost:8111/state'  # Replace with your URL
+    response = requests.get(url)
 
-# find the position of an image
-def find_image_position(template_path, screenshot_path):
-    template = cv2.imread(template_path, 0)
-    screenshot = cv2.imread(screenshot_path, 0)
+    if response.status_code == 200:
+        # Parse the JSON string
+        json_data = json.loads(response.text)
 
-    result = cv2.matchTemplate(screenshot, template, cv2.TM_CCOEFF_NORMED)
-    _, max_val, _, max_loc = cv2.minMaxLoc(result)
+        # Access the value of "H, m"
+        return json_data["H, m"]
+    
+def get_aoa():
+    url = 'http://localhost:8111/state'  # Replace with your URL
+    response = requests.get(url)
 
-    return max_loc
+    if response.status_code == 200:
+        # Parse the JSON string
+        json_data = json.loads(response.text)
 
-# calculate the distance on screen of 2 images
-def calculate_distance(image1_path, image2_path, screenshot_path):
-    image1_pos = find_image_position(image1_path, screenshot_path)
-    image2_pos = find_image_position(image2_path, screenshot_path)
+        # Access the value of "H, m"
+        return json_data["AoA, deg"]
 
-    distance = ((image2_pos[0] - image1_pos[0]) ** 2 + (image2_pos[1] - image1_pos[1]) ** 2) ** 0.5
-    return distance
 
 # End Program
 def end_program():
@@ -302,16 +315,22 @@ def bot():
         print("CONSOLE: Spawn Button Clicked") 
 
         time.sleep(np.random.uniform(0.5,0.7))
-
-        if pyautogui.locateOnScreen('assets/city.png', grayscale=False, confidence=0.8) != None:
-            is_city = True
-        else:
-            is_city = False
+        if pyautogui.locateOnScreen('assets/vietnam.png', grayscale=False, confidence=0.95) != None:
+            map = 'Vietnam'
+        elif pyautogui.locateOnScreen('assets/golan_heights.png', grayscale=False, confidence=0.95) != None:
+            map = 'GolanHeights'
+        elif pyautogui.locateOnScreen('assets/spain.png', grayscale=False, confidence=0.95) != None:
+            map = 'Spain'
+        elif pyautogui.locateOnScreen('assets/sinai.png', grayscale=False, confidence=0.95) != None:
+            map = 'Sinai'
+        elif pyautogui.locateOnScreen('assets/city.png', grayscale=False, confidence=0.95) != None:
+            map = 'city'
+        height = MAPS[map]
 
         # Get current time
         battle_time = time.time()
 
-        if is_city == False:
+        if map != 'city':
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn In')
             while pyautogui.locateOnScreen('assets/cancel.png', grayscale=False, confidence=0.7) != None:
@@ -372,7 +391,7 @@ def bot():
         zoom_time = 0
         zoom_flag = False
         brake_flag = False
-
+        print(map)
         
     
         hold(KEYBINDS['bomb'])
@@ -415,30 +434,16 @@ def bot():
                 break
 
             # Wait 10 cycles before zooming in
-            if zoom_time < 10 or zoom_flag == True:
-                zoom_time += 1
-            else:
+            if zoom_time >= 10 and zoom_flag == False:
                 press(KEYBINDS['zoom'])
                 zoom_flag = True
-
-            if brake_flag == False and zoom_flag == True:
-                # Define the coordinates of the region of interest
-                x = 1242  # X-coordinate of the top-left corner
-                y = 75  # Y-coordinate of the top-left corner
-                width = 76  # Width of the region
-                height = 300  # Height of the region
-
-                # Capture a screenshot of the specified region
-                screenshot = pyautogui.screenshot(region=(x, y, width, height))
-                screenshot.save('assets/screenshot.png')
-                if calculate_distance('assets/baseline.png', 'assets/bombsight.png', 'assets/screenshot.png') <= 10:
-                    press(KEYBINDS['airbrake'])
-                    brake_flag == True
-                    for i in range(6):
-                        pyautogui.scroll(-1)
-                        time.sleep(np.random.uniform(0.2,0.5))
-                        
-
+            zoom_time += 1
+            
+            # Check the height based on map and adjust AoA
+            if get_height() > height + 100 and get_aoa() > 0.0:
+                move_mouse_by(0, 15)
+            elif get_height() < height + 50:
+                move_mouse_by(0, -15)
 
 
         #  After Bombing pitch up and bait enemies
@@ -523,6 +528,8 @@ def main():
             print("CONSOLE: Exiting program")
             # Quit the program
             end_program()
+        
+            
 
 
 # Start the main thread
