@@ -45,7 +45,7 @@ DISTANCES = {
     'Sinai' : 0.065,
     'Spain1' : 0.075,
     'Spain2' : 0.075,
-    'city' : 0.09,
+    'city' : 0.136,
     'Vietnam1' : 0.07,
     'Vietnam2' : 0
 }
@@ -269,7 +269,7 @@ def end_program():
 
 def click_mouse():
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0) 
-    time.sleep(np.random.uniform(0.3,0.5)) 
+    time.sleep(np.random.uniform(0.7,1.2)) 
     win32api.mouse_event(win32con. MOUSEEVENTF_LEFTUP, 0, 0)
 
 # Chat a random phrase
@@ -555,22 +555,21 @@ def bot():
             print('CONSOLE: Aircraft Downed, Returning to Hangar')
             # Click 'Return To Hangar' Button
             move_mouse_to_image('assets/return_to_hangar.png')
-            press('esc')
-            press('up')
-            press('enter')
-            press('left')
-            press('enter')
+            click_mouse()
             time.sleep(np.random.uniform(20,30))
 
             # Click 'To Hangar' Button
-            clicked = False
-            while clicked == False:
-                clicked = click_button('assets/to_hangar.png')
+            while pyautogui.locateCenterOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.75) == None:
+                pass
+            move_mouse_to_image('assets/to_hangar.png')
+            click_mouse()
+
         # Match has ended
         else:
             print('CONSOLE: Match Ended, Returning to Hangar')
             # Click 'To Hangar' Button
-            press('esc')
+            move_mouse_to_image('assets/to_hangar.png')
+            click_mouse()
 
 
 #Operation Spain 1052m, 1 check
