@@ -33,9 +33,20 @@ game_stats = []
 MAPS = {
     'GolanHeights' : 560,
     'Sinai' : 150,
-    'Spain' : 1070,
-    'Vietnam' : 800,
-    'city' : 0
+    'Spain1' : 1100,
+    'Spain2' : 1100,
+    'Vietnam1' : 850,
+    'city' : 0,
+    'Vietnam2' : 0
+}
+
+DISTANCES = {
+    'GolanHeights' : 0,
+    'Sinai' : 0,
+    'Spain1' : 0,
+    'city' : 0,
+    'Vietnam1' : 0.06940799999999997,
+    'Vietnam2' : 0
 }
 
 # Char/Str to Scancode for Bot Game Inputs
@@ -185,7 +196,8 @@ ctypes.pointer(extra) )
 #################
 #   Functions   #
 #################
-def get_height():
+
+def get_attitude():
     url = 'http://localhost:8111/state'  # Replace with your URL
     response = requests.get(url)
 
@@ -194,19 +206,40 @@ def get_height():
         json_data = json.loads(response.text)
 
         # Access the value of "H, m"
-        return json_data["H, m"]
-    
-def get_aoa():
-    url = 'http://localhost:8111/state'  # Replace with your URL
-    response = requests.get(url)
+        return_data = (json_data["H, m"], json_data["Vy, m/s"])
+        print(f'AoA is: {return_data}')
+        return return_data
 
-    if response.status_code == 200:
-        # Parse the JSON string
-        json_data = json.loads(response.text)
+def get_distance():
+    url = 'http://localhost:8111/map_obj.json'  # Replace with your URL
+    response2 = requests.get(url)
 
-        # Access the value of "H, m"
-        return json_data["AoA, deg"]
+    if response2.status_code == 200:
+        # Request successful
+        #print('Response 2:' + str(response2.text))
+        json_data = json.loads(response2.text)
+        # Extract x and y values where icon is "Player"
+        points = []
+        for obj in json_data:
+            if obj["icon"] == "Player":
+                print("Player Coordinates:")
+                x = obj["x"]
+                y = obj["y"]
+            if obj["type"] == "bombing_point":
+                points.append(obj["x"])
+        
+        points_sorted = sorted(set(points))  # Remove duplicates and sort the values
+        points_sorted[1] 
+        for obj in json_data:
+            if obj["type"] == "bombing_point" and obj["x"] == points_sorted[1]:
+                point_x = obj["x"]
+                point_y = obj["y"]
 
+        distance = (x - point_x, y - point_y)
+        distance_total = distance[0] + distance[1]
+        print(f'Distance is: {distance}\nTotal is: {distance_total}')
+        if distance[0] + distance[1] <= 0.063408:
+            print("BRAKE NOW")
 
 # End Program
 def end_program():
@@ -316,17 +349,21 @@ def bot():
 
         time.sleep(np.random.uniform(0.5,0.7))
         if pyautogui.locateOnScreen('assets/vietnam.png', grayscale=False, confidence=0.95) != None:
-            map = 'Vietnam'
+            map = 'Vietnam1'
         elif pyautogui.locateOnScreen('assets/golan_heights.png', grayscale=False, confidence=0.95) != None:
             map = 'GolanHeights'
-        elif pyautogui.locateOnScreen('assets/spain.png', grayscale=False, confidence=0.95) != None:
-            map = 'Spain'
+        elif pyautogui.locateOnScreen('assets/spain1.png', grayscale=False, confidence=0.95) != None:
+            map = 'Spain1'
+        elif pyautogui.locateOnScreen('assets/spain2.png', grayscale=False, confidence=0.95) != None:
+            map = 'Spain2'
+        elif pyautogui.locateOnScreen('assets/spain1.png', grayscale=False, confidence=0.95) != None:
+            map = 'Spain1'
         elif pyautogui.locateOnScreen('assets/sinai.png', grayscale=False, confidence=0.95) != None:
             map = 'Sinai'
         elif pyautogui.locateOnScreen('assets/city.png', grayscale=False, confidence=0.95) != None:
             map = 'city'
         height = MAPS[map]
-
+        #distance = DISTANCES[map]
         # Get current time
         battle_time = time.time()
 
@@ -336,7 +373,7 @@ def bot():
             while pyautogui.locateOnScreen('assets/cancel.png', grayscale=False, confidence=0.7) != None:
                 pass
             # Pitch values
-            pitch_value = 368
+            pitch_value = 344
             downVal = int(pitch_value/8)
 
             # Throttle up, then pitch up
@@ -357,10 +394,6 @@ def bot():
             while pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7) == None:
                 pass
             
-            # Slowly pitch the plane back to level
-            for i in range(5):
-                move_mouse_by(0, downVal)
-                time.sleep(1)
         else:
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn In')
@@ -391,6 +424,7 @@ def bot():
         zoom_time = 0
         zoom_flag = False
         brake_flag = False
+        pitch_flag = False
         print(map)
         
     
@@ -429,9 +463,9 @@ def bot():
                 # Calculate the distance between the target center and the screen's center
                 distance_x = int((center_x - screen_center_x)/5)
                 move_mouse_by(distance_x, 0)
-            else:
-                release(KEYBINDS['bomb'])
-                break
+            #else:
+                #release(KEYBINDS['bomb'])
+                #break
 
             # Wait 10 cycles before zooming in
             if zoom_time >= 10 and zoom_flag == False:
@@ -439,11 +473,26 @@ def bot():
                 zoom_flag = True
             zoom_time += 1
             
-            # Check the height based on map and adjust AoA
-            if get_height() > height + 100 and get_aoa() > 0.0:
-                move_mouse_by(0, 15)
-            elif get_height() < height + 50:
-                move_mouse_by(0, -15)
+            # Slowly pitch the plane back to level
+            attitude = get_attitude()
+            if pitch_flag == False and attitude[0] > height - 10:
+                for i in range(5):
+                    move_mouse_by(0, downVal + 5)
+                    time.sleep(1)
+                pitch_flag = True
+            
+            # Get the attitude index 0 is the height in m, index 1 is the change in height
+            if pitch_flag == True:
+                if attitude[0] > height + 100 and attitude[1] > 0.0:
+                    move_mouse_by(0, 7)
+                elif attitude[0] < height and attitude[1] < 0.0:
+                    move_mouse_by(0, -7)
+                elif attitude[0] < height + 100 and attitude[0] > height and attitude[1] > 0.1:
+                    move_mouse_by(0, 7)
+                elif attitude[0] < height + 100 and attitude[0] > height and attitude[1] < -0.1:
+                    move_mouse_by(0, -7)
+            
+            get_distance()
 
 
         #  After Bombing pitch up and bait enemies
