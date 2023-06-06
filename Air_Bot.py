@@ -128,21 +128,6 @@ with open('data/keybinds.txt', 'r') as file:
 # Evaluate the contents as Python code
 KEYBINDS = eval(contents)
 
-# Phrases that can be typed in chat
-phrase_count = -1
-with open('chat_phrases.txt', 'r') as file:
-    # create an empty list
-    CHATPHRASES = []
-    # iterate over the lines in the file
-    for line in file:
-        # strip leading and trailing whitespace from the line
-        line = line.strip()
-        if line and not line.startswith('#'):
-            # add the line to the list
-            CHATPHRASES.append(line)
-            phrase_count += 1
-
-
 ###############################
 #   C struct redefinitions    #
 ###############################
@@ -299,22 +284,6 @@ def click_mouse():
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0) 
     time.sleep(np.random.uniform(0.7,1.2)) 
     win32api.mouse_event(win32con. MOUSEEVENTF_LEFTUP, 0, 0)
-
-# Chat a random phrase
-def random_chat():
-    # Pick a Random message
-    message = random.choice(CHATPHRASES)
-    print(f'CONSOLE: Typing Message : {message}')
-    press('enter')
-    time.sleep(np.random.uniform(0.3,0.7)) 
-    for letter in message:
-        if letter.isupper() == True:
-            press('caps')
-            type(letter.lower())
-            press('caps')
-        else:
-            type(letter)
-    press('enter')
 
 # Move mouse to given X, Y Coordinates
 def move_mouse_to(x, y):
