@@ -421,7 +421,6 @@ def bot():
             map = 'Spain1'
         elif pyautogui.locateOnScreen('assets/spain3.png', grayscale=False, confidence=0.97) != None:
             map = 'Spain3'
-            screenshot_val = True
         elif pyautogui.locateOnScreen('assets/spain2.png', grayscale=False, confidence=0.97) != None:
             map = 'Spain2'
             screenshot_val = True
@@ -668,7 +667,7 @@ def main():
     # Create the main window
     window = tk.Tk()
     window.title("Nicks War Thunder Air Bot 1.6")
-    window.geometry("800x600")
+    window.geometry("800x500")
     window.configure(bg="#333333")
 
     # Load the image
