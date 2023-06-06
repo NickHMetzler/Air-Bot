@@ -283,6 +283,29 @@ def get_mach():
         return_data = json_data["mach"]
         print(f'Plane is at Mach {return_data}')
         return return_data
+    
+# Temp Function
+def screenshot_screen():
+    folder_path = 'assets/screenshots/'
+    # Get a list of existing files in the folder
+    existing_files = os.listdir(folder_path)
+    # Find the maximum number in the existing file names
+    max_number = 0
+    for file_name in existing_files:
+        if file_name.startswith('screenshot') and file_name.endswith('.png'):
+            try:
+                number = int(file_name[10:14])  # Extract the number part
+                max_number = max(max_number, number)
+            except ValueError:
+                pass
+    # Increment the number and format it with leading zeros
+    new_number = str(max_number + 1).zfill(4)
+    # Create the new file name
+    file_name = f'screenshot{new_number}.png'
+    # Take the screenshot
+    myScreenshot = pyautogui.screenshot()
+    # Save the screenshot with the new file name
+    myScreenshot.save(os.path.join(folder_path, file_name))
 
 # End Program
 def end_program():
@@ -330,6 +353,7 @@ def click_button(image_path):
     else:
         return False
 
+# Move the Mouse to a given image
 def move_mouse_to_image(image_path):
     image = pyautogui.locateCenterOnScreen(image_path, grayscale=False, confidence=0.75)
     if image != None:
@@ -379,8 +403,11 @@ def bot():
 
         # Click 'To Battle' Button in Main Menu
         while pyautogui.locateOnScreen('assets/in_queue.png', grayscale=False, confidence=0.75) == None:
+            # Do not click if the vehicle needs to be repaired
+            if pyautogui.locateOnScreen('assets/trophy.png', grayscale=False, confidence=0.95) != None:
+                press(KEYBINDS['enter'])
             while pyautogui.locateOnScreen('assets/repaired.png', grayscale=False, confidence=0.95) == None:
-                pass
+                time.sleep(0.1)
             press(KEYBINDS['enter'])
             time.sleep(0.3)
         print("CONSOLE: To Battle!")
@@ -388,14 +415,16 @@ def bot():
         # Wait to Join Battle
         print(f'CONSOLE: Waiting in Qeue...')
         while pyautogui.locateCenterOnScreen('assets/spawn.png', grayscale=False, confidence=0.8) == None:
-            pass
+            time.sleep(0.1)
         
         # In Battle, click the Spawn In button
         press(KEYBINDS['enter'])
         print("CONSOLE: Spawn Button Clicked") 
         move_mouse_to(100, 100)
         time.sleep(np.random.uniform(0.5,0.7))
+        # Temp Variable
         screenshot_val = False
+
         # Figure out which map
         if pyautogui.locateOnScreen('assets/vietnam3.png', grayscale=False, confidence=0.96) != None:
             map = 'Vietnam3'
@@ -429,30 +458,10 @@ def bot():
             screenshot_val = True
         else:
             screenshot_val = True
+        # Temp condition
         if screenshot_val == True: 
-            folder_path = 'assets/screenshots/'
-            # Get a list of existing files in the folder
-            existing_files = os.listdir(folder_path)
-            # Find the maximum number in the existing file names
-            max_number = 0
-            for file_name in existing_files:
-                if file_name.startswith('screenshot') and file_name.endswith('.png'):
-                    try:
-                        number = int(file_name[10:14])  # Extract the number part
-                        max_number = max(max_number, number)
-                    except ValueError:
-                        pass
-            # Increment the number and format it with leading zeros
-            new_number = str(max_number + 1).zfill(4)
-            # Create the new file name
-            file_name = f'screenshot{new_number}.png'
-            # Tae the screenshot
-            myScreenshot = pyautogui.screenshot()
-            # Save the screenshot with the new file name
-            myScreenshot.save(os.path.join(folder_path, file_name))
+            screenshot_screen()
 
-        #elif pyautogui.locateOnScreen('assets/rocky_canyon1.png', grayscale=False, confidence=0.97) != None:
-            #map = 'RockyCanyon'
         print(f'CONSOLE: Map is {map}')
 
         # Pitch values
@@ -465,7 +474,7 @@ def bot():
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn In')
             while pyautogui.locateOnScreen('assets/cancel.png', grayscale=False, confidence=0.7) != None:
-                pass
+                time.sleep(0.1)
             start_time = time.time()
             # Throttle up, then pitch up
             holdFor('w', 4)
@@ -476,23 +485,23 @@ def bot():
             press(KEYBINDS['ccrp'])
 
             while get_elapsed_time(battle_time) < 45.0:
-                pass
+                time.sleep(0.1)
             # Retract gear
             press(KEYBINDS['gear'])
             # Choose base target
             press(KEYBINDS['ccrp'])
             while pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) == None:
-                pass
+                time.sleep(0.1)
             # Pitch down a few times
             for i in range(3):
                     move_mouse_by(0, downVal + 5)
                     time.sleep(1)
-            
+        # Air Spawn
         else:
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn In')
             while pyautogui.locateOnScreen('assets/cancel.png', grayscale=False, confidence=0.7) != None:
-                pass
+                time.sleep(0.1)
             start_time = time.time()
             # Afterburner
             press('w')
@@ -502,20 +511,6 @@ def bot():
             press(KEYBINDS['ccrp'])
             time.sleep(5)
             press(KEYBINDS['ccrp'])
-
-        # 60% chance that the bot will Chat this game
-        choice = random.randint(0, 10)
-        choice = 10
-        if choice <= 6 and phrase_count >= 0:
-            chat_flag = False
-            # Set the Chat to All
-            press('enter')
-            time.sleep(np.random.uniform(1.2,1.7))
-            press('tab')
-            time.sleep(np.random.uniform(1.2,1.7))
-            press('enter')
-        else:
-            chat_flag = True
 
         # Set variables for game loop
         battle_time = time.time()
@@ -535,42 +530,13 @@ def bot():
 
         # Bombing loop
         while pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) == None:
+            # Temp Condition
             if screenshot_val == True and time.time() - battle_time > 60 and (map == 'Vietnam2' or map == 'RockyCanyon2' or map == 'Spain2'):
-                # Get a list of existing files in the folder
-                existing_files = os.listdir(folder_path)
-                # Find the maximum number in the existing file names
-                max_number = 0
-                for file_name in existing_files:
-                    if file_name.startswith('screenshot') and file_name.endswith('.png'):
-                        try:
-                            number = int(file_name[10:14])  # Extract the number part
-                            max_number = max(max_number, number)
-                        except ValueError:
-                            pass
-                # Increment the number and format it with leading zeros
-                new_number = str(max_number + 1).zfill(4)
-                # Create the new file name
-                file_name = f'screenshot{new_number}.png'
-                # Tae the screenshot
-                myScreenshot = pyautogui.screenshot()
-                # Save the screenshot with the new file name
-                myScreenshot.save(os.path.join(folder_path, file_name))
+                screenshot_screen()
                 hold('m')
-                # Increment the number and format it with leading zeros
-                new_number = str(max_number + 1).zfill(4)
-                # Create the new file name
-                file_name = f'screenshot{new_number}.png'
-                # Tae the screenshot
-                myScreenshot = pyautogui.screenshot()
-                # Save the screenshot with the new file name
-                myScreenshot.save(os.path.join(folder_path, file_name))
+                screenshot_screen()
                 release('m')
                 screenshot_val = False
-            # Type a message in chat
-            if chat_flag == False:
-                # Temp variable
-                chat_flag = True
-                random_chat()
 
             # Locate the CCRP line and move the mouse towards it
             location = pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7)
@@ -595,6 +561,7 @@ def bot():
                 zoom_flag = True
             zoom_time += 1
             
+            # Release flares while subsonic
             if brake_flag == True:
                 pyautogui.scroll(-2)
                 pyautogui.scroll(2)
@@ -613,6 +580,7 @@ def bot():
                     move_mouse_by(0, downVal + 5)
                     time.sleep(1)
                 pitch_flag = True
+
             # Hit the airbrake and turn off afterburner when close to the base
             distance = get_distance(map)
             if brake_flag == False and distance <= map_distance:
@@ -639,7 +607,7 @@ def bot():
                 elif attitude[0] < height + 100 and attitude[0] > height and attitude[1] < -0.1:
                     move_mouse_by(0, -7)
             
-        #  After Bombing pitch up and bait enemies
+        #  After Bombing pitch up, throttle down, and bait enemies
         time.sleep(1)
         if mach_flag == False:
             press(KEYBINDS['airbrake'])
@@ -649,13 +617,11 @@ def bot():
         holdFor('s', 0.3)
         time.sleep(np.random.uniform(1.2,1.7))
         while pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) == None:
-            move_mouse_by(150, 0)
-            current_time = time.time()
-            elapsed_time = current_time - start_time
+            move_mouse_by(np.random.uniform(130,170), 0)
+            elapsed_time = get_elapsed_time(battle_time)
             # J out if 10 minutes have passed
-            if elapsed_time >= 600:  # 600 seconds = 10 minutes
+            if elapsed_time >= 600:
                 holdFor('j', 4)
-
 
         # Vehicle has been destroyed
         if pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) != None:
@@ -663,13 +629,13 @@ def bot():
             print('CONSOLE: Aircraft Downed, Returning to Hangar')
             # Click 'Return To Hangar' Button
             while pyautogui.locateCenterOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.75) == None:
-                pass
+                time.sleep(0.1)
             move_mouse_to_image('assets/return_to_hangar.png')
             click_mouse()
             
             # Click 'To Hangar' Button
             while pyautogui.locateCenterOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.75) == None:
-                pass
+                time.sleep(0.1)
             move_mouse_to_image('assets/to_hangar.png')
             click_mouse()
         elif pyautogui.locateCenterOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.75) != None:
@@ -680,7 +646,7 @@ def bot():
 
             # Click 'To Hangar' Button
             while pyautogui.locateCenterOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.75) == None:
-                pass
+                time.sleep(0.1)
             move_mouse_to_image('assets/to_hangar.png')
             click_mouse()
 
@@ -695,14 +661,14 @@ def bot():
 #Operation Spain 1052m, 1 check
 #Operation Vietnam 670m, 2 check
 title_banner = """
-  _   _ ___ ____ _  ______   __        ___    ____    _____ _   _ _   _ _   _ ____  _____ ____    ____   ___ _____   _   _ 
- | \ | |_ _/ ___| |/ / ___|  \ \      / / \  |  _ \  |_   _| | | | | | | \ | |  _ \| ____|  _ \  | __ ) / _ \_   _| / | / |
- |  \| || | |   | ' /\___ \   \ \ /\ / / _ \ | |_) |   | | | |_| | | | |  \| | | | |  _| | |_) | |  _ \| | | || |   | | | |
- | |\  || | |___| . \ ___) |   \ V  V / ___ \|  _ <    | | |  _  | |_| | |\  | |_| | |___|  _ <  | |_) | |_| || |   | |_| |
- |_| \_|___\____|_|\_\____/     \_/\_/_/   \_\_| \_\   |_| |_| |_|\___/|_| \_|____/|_____|_| \_\ |____/ \___/ |_|   |_(_)_|
-                                                                                                                           
-                                                                                                                    
-"""
+  _   _ _      _         __          __          _______ _                     _             ____        _     __   _____ 
+ | \ | (_)    | |        \ \        / /         |__   __| |                   | |           |  _ \      | |   /_ | | ____|
+ |  \| |_  ___| | _____   \ \  /\  / /_ _ _ __     | |  | |__  _   _ _ __   __| | ___ _ __  | |_) | ___ | |_   | | | |__  
+ | . ` | |/ __| |/ / __|   \ \/  \/ / _` | '__|    | |  | '_ \| | | | '_ \ / _` |/ _ \ '__| |  _ < / _ \| __|  | | |___ \ 
+ | |\  | | (__|   <\__ \    \  /\  / (_| | |       | |  | | | | |_| | | | | (_| |  __/ |    | |_) | (_) | |_   | |_ ___) |
+ |_| \_|_|\___|_|\_\___/     \/  \/ \__,_|_|       |_|  |_| |_|\__,_|_| |_|\__,_|\___|_|    |____/ \___/ \__|  |_(_)____/ 
+                                                                                                                          
+                                                                                                                          """
 # Main function
 def main():
     # Main menu
