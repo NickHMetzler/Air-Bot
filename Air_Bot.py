@@ -32,24 +32,34 @@ pyautogui.FAILSAFE = False
 # Cruising Altitude for each Map
 HEIGHTS = {
     'GolanHeights' : 560,
-    'Sinai' : 150,
+    'Sinai1' : 150,
+    'Sinai2' : 800,
     'Spain1' : 1100,
-    'Spain2' : 1100,
+    'Spain2' : 1290,
+    'Spain3' : 1100,
     'Vietnam1' : 850,
     'Vietnam2' : 1500,
-    'RockyCanyon' : 3000,
-    'city' : 850
+    'Vietnam3' : 850,
+    'RockyCanyon1' : 3000,
+    'RockyCanyon2' : 2500,
+    'City1' : 850,
+    'City2' : 850
 }
 # Bombing Distances for each Map
 DISTANCES = {
-    'GolanHeights' : 0.05,
-    'Sinai' : 0.065,
+    'GolanHeights' : 0.055,
+    'Sinai1' : 0.065,
+    'Sinai2' : 0.07,
     'Spain1' : 0.075,
     'Spain2' : 0.07,
+    'Spain3' : 0.075,
     'Vietnam1' : 0.07,
-    'Vietnam2' : 0,
-    'RockyCanyon' : 3000,
-    'city' : 0.136
+    'Vietnam2' : 0.07,
+    'Vietnam3' : 0.07,
+    'RockyCanyon1' : 0.2,
+    'RockyCanyon2' : 0.2,
+    'City1' : 0.15,
+    'City2' : 0.15
 }
 
 # Char/Str to Scancode for Bot Game Inputs
@@ -223,10 +233,11 @@ def get_distance(map):
 
     if response2.status_code == 200:
         # Request successful
-        #print('Response 2:' + str(response2.text))
         json_data = json.loads(response2.text)
         # Extract x and y values where icon is "Player"
         points = []
+        x = None  # Initialize x with a default value
+        y = None  # Initialize y with a default value
         for obj in json_data:
             if obj["icon"] == "Player":
                 print("Player Coordinates:")
@@ -234,25 +245,30 @@ def get_distance(map):
                 y = obj["y"]
             if obj["type"] == "bombing_point":
                 points.append(obj["x"])
-        
+            
         points_sorted = sorted(set(points))  # Remove duplicates and sort the values
-        if map == 'Spain2':
+        if map == 'GolanHeights2' or map == 'Spain3' or map == 'Sinai2' or map == 'Vietnam2':
             index = 3
-        elif map == 'RockyCanyon':
+        elif map == 'RockyCanyon' or map == 'Vietnam3':
             index = 0
-        elif map == 'Vietnam2':
+        elif map == 'Spain2' or map == 'City2':
             index = 2
         else:
             index = 1
-        chosen_point = points_sorted[index] 
-        for obj in json_data:
-            if obj["type"] == "bombing_point" and obj["x"] == chosen_point:
-                point_x = obj["x"]
-                point_y = obj["y"]
-
-        distance = math.sqrt((x - point_x)**2 + (y - point_y)**2)
+        if x is not None and index < len(points_sorted):
+            chosen_point = points_sorted[index] 
+            point_x = None  # Initialize point_x with a default value
+            point_y = None  # Initialize point_y with a default value
+            for obj in json_data:
+                if obj["type"] == "bombing_point" and obj["x"] == chosen_point:
+                    point_x = obj["x"]
+                    point_y = obj["y"]
+            distance = math.sqrt((x - point_x)**2 + (y - point_y)**2)
+        else:
+            distance = 0
         print(f'Distance from the base is: {distance}')
         return distance
+
 
 # Returns the speed in Mach
 def get_mach():
@@ -363,6 +379,8 @@ def bot():
 
         # Click 'To Battle' Button in Main Menu
         while pyautogui.locateOnScreen('assets/in_queue.png', grayscale=False, confidence=0.75) == None:
+            while pyautogui.locateOnScreen('assets/repaired.png', grayscale=False, confidence=0.95) == None:
+                pass
             press(KEYBINDS['enter'])
             time.sleep(0.3)
         print("CONSOLE: To Battle!")
@@ -375,26 +393,67 @@ def bot():
         # In Battle, click the Spawn In button
         press(KEYBINDS['enter'])
         print("CONSOLE: Spawn Button Clicked") 
-
+        move_mouse_to(100, 100)
         time.sleep(np.random.uniform(0.5,0.7))
-
+        screenshot_val = False
         # Figure out which map
-        if pyautogui.locateOnScreen('assets/vietnam2.png', grayscale=False, confidence=0.95) != None:
+        if pyautogui.locateOnScreen('assets/vietnam3.png', grayscale=False, confidence=0.96) != None:
+            map = 'Vietnam3'
+            screenshot_val = True
+        elif pyautogui.locateOnScreen('assets/vietnam2.png', grayscale=False, confidence=0.97) != None:
             map = 'Vietnam2'
-        elif pyautogui.locateOnScreen('assets/vietnam1.png', grayscale=False, confidence=0.95) != None:
+            screenshot_val = True
+        elif pyautogui.locateOnScreen('assets/vietnam1.png', grayscale=False, confidence=0.97) != None:
             map = 'Vietnam1'
-        elif pyautogui.locateOnScreen('assets/golan_heights.png', grayscale=False, confidence=0.95) != None:
+        elif pyautogui.locateOnScreen('assets/golan_heights.png', grayscale=False, confidence=0.97) != None:
             map = 'GolanHeights'
-        elif pyautogui.locateOnScreen('assets/spain1.png', grayscale=False, confidence=0.95) != None:
+            screenshot_val = True
+        elif pyautogui.locateOnScreen('assets/spain1.png', grayscale=False, confidence=0.97) != None:
             map = 'Spain1'
-        elif pyautogui.locateOnScreen('assets/spain2.png', grayscale=False, confidence=0.95) != None:
+        elif pyautogui.locateOnScreen('assets/spain3.png', grayscale=False, confidence=0.97) != None:
+            map = 'Spain3'
+            screenshot_val = True
+        elif pyautogui.locateOnScreen('assets/spain2.png', grayscale=False, confidence=0.97) != None:
             map = 'Spain2'
-        elif pyautogui.locateOnScreen('assets/sinai.png', grayscale=False, confidence=0.95) != None:
-            map = 'Sinai'
-        elif pyautogui.locateOnScreen('assets/city.png', grayscale=False, confidence=0.95) != None:
-            map = 'city'
-        elif pyautogui.locateOnScreen('assets/rocky_canyon.png', grayscale=False, confidence=0.95) != None:
-            map = 'city'
+        elif pyautogui.locateOnScreen('assets/sinai1.png', grayscale=False, confidence=0.97) != None:
+            map = 'Sinai1'
+        elif pyautogui.locateOnScreen('assets/sinai2.png', grayscale=False, confidence=0.97) != None:
+            map = 'Sinai2'
+            screenshot_val = True
+        elif pyautogui.locateOnScreen('assets/city2.png', grayscale=False, confidence=0.97) != None:
+            map = 'City2'
+        elif pyautogui.locateOnScreen('assets/city1.png', grayscale=False, confidence=0.97) != None:
+            map = 'City1'
+        elif pyautogui.locateOnScreen('assets/rocky_canyon2.png', grayscale=False, confidence=0.97) != None:
+            map = 'RockyCanyon2'
+            screenshot_val = True
+        else:
+            screenshot_val = True
+        if screenshot_val == True: 
+            folder_path = 'assets/screenshots/'
+            # Get a list of existing files in the folder
+            existing_files = os.listdir(folder_path)
+            # Find the maximum number in the existing file names
+            max_number = 0
+            for file_name in existing_files:
+                if file_name.startswith('screenshot') and file_name.endswith('.png'):
+                    try:
+                        number = int(file_name[10:14])  # Extract the number part
+                        max_number = max(max_number, number)
+                    except ValueError:
+                        pass
+            # Increment the number and format it with leading zeros
+            new_number = str(max_number + 1).zfill(4)
+            # Create the new file name
+            file_name = f'screenshot{new_number}.png'
+            # Tae the screenshot
+            myScreenshot = pyautogui.screenshot()
+            # Save the screenshot with the new file name
+            myScreenshot.save(os.path.join(folder_path, file_name))
+
+        #elif pyautogui.locateOnScreen('assets/rocky_canyon1.png', grayscale=False, confidence=0.97) != None:
+            #map = 'RockyCanyon'
+        print(f'CONSOLE: Map is {map}')
 
         # Pitch values
         pitch_value = 344
@@ -402,12 +461,12 @@ def bot():
 
         # Take off/spawn procedure
         battle_time = time.time()
-        if map != 'city':
+        if map != 'City1' and map != 'City2':
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn In')
             while pyautogui.locateOnScreen('assets/cancel.png', grayscale=False, confidence=0.7) != None:
                 pass
-
+            start_time = time.time()
             # Throttle up, then pitch up
             holdFor('w', 4)
             move_mouse_by(0, -pitch_value)
@@ -422,7 +481,7 @@ def bot():
             press(KEYBINDS['gear'])
             # Choose base target
             press(KEYBINDS['ccrp'])
-            while pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7) == None:
+            while pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) == None:
                 pass
             # Pitch down a few times
             for i in range(3):
@@ -434,6 +493,7 @@ def bot():
             print('CONSOLE: Waiting to Spawn In')
             while pyautogui.locateOnScreen('assets/cancel.png', grayscale=False, confidence=0.7) != None:
                 pass
+            start_time = time.time()
             # Afterburner
             press('w')
             # Start CCRP and choose base
@@ -459,22 +519,53 @@ def bot():
 
         # Set variables for game loop
         battle_time = time.time()
-        time_report = 1
         zoom_time = 0
         zoom_flag = False
         brake_flag = False
-        pitch_flag = False
+        if map == 'City1' or map == 'City2':
+            pitch_flag = True
+        else:
+            pitch_flag = False
         mach_flag = False
         map_distance = DISTANCES[map]
         height = HEIGHTS[map]
-        print(map)
         
         # Hold down the bombing button
         hold(KEYBINDS['bomb'])
 
         # Bombing loop
-        while pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.7) == None:
-            
+        while pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) == None:
+            if screenshot_val == True and time.time() - battle_time > 60 and (map == 'Vietnam2' or map == 'RockyCanyon2' or map == 'Spain2'):
+                # Get a list of existing files in the folder
+                existing_files = os.listdir(folder_path)
+                # Find the maximum number in the existing file names
+                max_number = 0
+                for file_name in existing_files:
+                    if file_name.startswith('screenshot') and file_name.endswith('.png'):
+                        try:
+                            number = int(file_name[10:14])  # Extract the number part
+                            max_number = max(max_number, number)
+                        except ValueError:
+                            pass
+                # Increment the number and format it with leading zeros
+                new_number = str(max_number + 1).zfill(4)
+                # Create the new file name
+                file_name = f'screenshot{new_number}.png'
+                # Tae the screenshot
+                myScreenshot = pyautogui.screenshot()
+                # Save the screenshot with the new file name
+                myScreenshot.save(os.path.join(folder_path, file_name))
+                hold('m')
+                # Increment the number and format it with leading zeros
+                new_number = str(max_number + 1).zfill(4)
+                # Create the new file name
+                file_name = f'screenshot{new_number}.png'
+                # Tae the screenshot
+                myScreenshot = pyautogui.screenshot()
+                # Save the screenshot with the new file name
+                myScreenshot.save(os.path.join(folder_path, file_name))
+                release('m')
+                screenshot_val = False
             # Type a message in chat
             if chat_flag == False:
                 # Temp variable
@@ -491,7 +582,7 @@ def bot():
                 screen_center_x = screen_width // 2
                 
                 # Calculate the distance between the target center and the screen's center
-                distance_x = int((center_x - screen_center_x)/5)
+                distance_x = int((center_x - screen_center_x)/2)
                 move_mouse_by(distance_x, 0)
             elif brake_flag == True:
                 # Release the bombing button
@@ -504,6 +595,10 @@ def bot():
                 zoom_flag = True
             zoom_time += 1
             
+            if brake_flag == True:
+                pyautogui.scroll(-2)
+                pyautogui.scroll(2)
+                
             # Check if the airbrake can be deactivated
             if brake_flag == True and mach_flag == False:
                 mach = get_mach()
@@ -513,12 +608,11 @@ def bot():
 
             # Slowly pitch the plane back to level
             attitude = get_attitude()
-            if map != 'city' and pitch_flag == False and attitude[0] > height - 10:
+            if (map != 'City1' and map != 'City2') and pitch_flag == False and attitude[0] > height - 10:
                 for i in range(2):
                     move_mouse_by(0, downVal + 5)
                     time.sleep(1)
                 pitch_flag = True
-            
             # Hit the airbrake and turn off afterburner when close to the base
             distance = get_distance(map)
             if brake_flag == False and distance <= map_distance:
@@ -527,7 +621,7 @@ def bot():
                 brake_flag = True
 
             # Maintain level flight
-            if (map == 'city' or pitch_flag == True) and brake_flag == False:
+            if pitch_flag == True and brake_flag == False:
                 if attitude[0] > height + 100 and attitude[1] > 15.0:
                     move_mouse_by(0, 30)
                 elif attitude[0] < height and attitude[1] < -15.0:
@@ -547,16 +641,24 @@ def bot():
             
         #  After Bombing pitch up and bait enemies
         time.sleep(1)
+        if mach_flag == False:
+            press(KEYBINDS['airbrake'])
         press(KEYBINDS['smoke'])
         move_mouse_by(0, -200)
-        for i in range(4):
+        time.sleep(np.random.uniform(1.2,1.7))
+        holdFor('s', 0.3)
+        time.sleep(np.random.uniform(1.2,1.7))
+        while pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) == None:
             move_mouse_by(150, 0)
-            time.sleep(np.random.uniform(1.2,1.7))
-        while pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None:
-            pass
+            current_time = time.time()
+            elapsed_time = current_time - start_time
+            # J out if 10 minutes have passed
+            if elapsed_time >= 600:  # 600 seconds = 10 minutes
+                holdFor('j', 4)
+
 
         # Vehicle has been destroyed
-        if pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.7) != None:
+        if pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) != None:
             holdFor('j', 4)
             print('CONSOLE: Aircraft Downed, Returning to Hangar')
             # Click 'Return To Hangar' Button
@@ -570,7 +672,7 @@ def bot():
                 pass
             move_mouse_to_image('assets/to_hangar.png')
             click_mouse()
-        if pyautogui.locateCenterOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.75) != None:
+        elif pyautogui.locateCenterOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.75) != None:
             print('CONSOLE: Aircraft Downed, Returning to Hangar')
             # Click 'Return To Hangar' Button
             move_mouse_to_image('assets/return_to_hangar.png')
