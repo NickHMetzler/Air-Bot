@@ -180,6 +180,28 @@ ctypes.pointer(extra) )
 #################
 #   Functions   #
 #################
+# Finds the leftmost base
+def find_left_base():
+    min_x = None
+
+    for _ in range(5):
+        pyautogui.press(KEYBINDS['ccrp'])
+        position = pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7)
+        
+        if position is not None:
+            x, _, _, _ = position
+            if min_x is None or x < min_x:
+                min_x = x
+
+    while True:
+        pyautogui.press(KEYBINDS['ccrp'])
+        position = pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7)
+        
+        if position is not None:
+            x, _, _, _ = position
+            if x == min_x:
+                break
+
 # Returns the current Height and Rate of Climb
 def get_attitude():
     url = 'http://localhost:8111/state'
@@ -215,12 +237,14 @@ def get_distance(map):
                 points.append(obj["x"])
             
         points_sorted = sorted(set(points))  # Remove duplicates and sort the values
-        if map == 'GolanHeights2' or map == 'Spain3' or map == 'Sinai2' or map == 'Vietnam2':
+        if map == 'GolanHeights2' or map == 'Spain3' or map == 'Sinai2':
             index = 3
         elif map == 'RockyCanyon' or map == 'Vietnam3':
             index = 0
-        elif map == 'Spain2' or map == 'City2':
+        elif map == 'City2':
             index = 2
+        elif map == 'Spain2' or map == 'Vietnam2':
+            index = 4
         else:
             index = 1
         if x is not None and index < len(points_sorted):
@@ -358,10 +382,9 @@ def bot():
             # Do not click if the vehicle needs to be repaired
             if pyautogui.locateOnScreen('assets/trophy.png', grayscale=False, confidence=0.95) != None:
                 press(KEYBINDS['enter'])
-            while pyautogui.locateOnScreen('assets/repaired.png', grayscale=False, confidence=0.95) == None:
-                time.sleep(0.1)
-            press(KEYBINDS['enter'])
-            time.sleep(0.3)
+            if pyautogui.locateOnScreen('assets/repaired.png', grayscale=False, confidence=0.95) != None:
+                press(KEYBINDS['enter'])
+            time.sleep(0.5)
         print("CONSOLE: To Battle!")
 
         # Wait to Join Battle
@@ -386,9 +409,8 @@ def bot():
             screenshot_val = True
         elif pyautogui.locateOnScreen('assets/vietnam1.png', grayscale=False, confidence=0.97) != None:
             map = 'Vietnam1'
-        elif pyautogui.locateOnScreen('assets/golan_heights.png', grayscale=False, confidence=0.97) != None:
-            map = 'GolanHeights'
-            screenshot_val = True
+        elif pyautogui.locateOnScreen('assets/golan_heights1.png', grayscale=False, confidence=0.97) != None:
+            map = 'GolanHeights1'
         elif pyautogui.locateOnScreen('assets/golan_heights2.png', grayscale=False, confidence=0.97) != None:
             map = 'GolanHeights2'
         elif pyautogui.locateOnScreen('assets/spain1.png', grayscale=False, confidence=0.97) != None:
@@ -398,11 +420,11 @@ def bot():
             screenshot_val = True
         elif pyautogui.locateOnScreen('assets/spain2.png', grayscale=False, confidence=0.97) != None:
             map = 'Spain2'
+            screenshot_val = True
         elif pyautogui.locateOnScreen('assets/sinai1.png', grayscale=False, confidence=0.97) != None:
             map = 'Sinai1'
         elif pyautogui.locateOnScreen('assets/sinai2.png', grayscale=False, confidence=0.97) != None:
             map = 'Sinai2'
-            screenshot_val = True
         elif pyautogui.locateOnScreen('assets/city2.png', grayscale=False, confidence=0.97) != None:
             map = 'City2'
         elif pyautogui.locateOnScreen('assets/city1.png', grayscale=False, confidence=0.97) != None:
@@ -478,6 +500,9 @@ def bot():
         mach_flag = False
         map_distance = DISTANCES[map]
         height = HEIGHTS[map]
+
+        if map == 'Spain2' or map == 'Vietnam2':
+            find_left_base()
         
         # Hold down the bombing button
         hold(KEYBINDS['bomb'])
@@ -485,7 +510,7 @@ def bot():
         # Bombing loop
         while pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) == None:
             # Temp Condition
-            if screenshot_val == True and time.time() - battle_time > 60 and (map == 'Vietnam2' or map == 'RockyCanyon2' or map == 'Spain2'):
+            if screenshot_val == True and zoom_time == 6 and (map == 'RockyCanyon2' or map == 'Spain3'):
                 screenshot_screen()
                 hold('m')
                 screenshot_screen()
@@ -571,7 +596,7 @@ def bot():
         holdFor('s', 0.3)
         time.sleep(np.random.uniform(1.2,1.7))
         while pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) == None:
-            move_mouse_by(np.random.uniform(130,170), 0)
+            move_mouse_by(random.randint(130,170), 0)
             elapsed_time = get_elapsed_time(battle_time)
             # J out if 10 minutes have passed
             if elapsed_time >= 600:
@@ -615,19 +640,26 @@ def bot():
 #Operation Spain 1052m, 1 check
 #Operation Vietnam 670m, 2 check
 title_banner = """
-  _   _ _      _         __          __          _______ _                     _             ____        _     __   _____ 
- | \ | (_)    | |        \ \        / /         |__   __| |                   | |           |  _ \      | |   /_ | | ____|
- |  \| |_  ___| | _____   \ \  /\  / /_ _ _ __     | |  | |__  _   _ _ __   __| | ___ _ __  | |_) | ___ | |_   | | | |__  
- | . ` | |/ __| |/ / __|   \ \/  \/ / _` | '__|    | |  | '_ \| | | | '_ \ / _` |/ _ \ '__| |  _ < / _ \| __|  | | |___ \ 
- | |\  | | (__|   <\__ \    \  /\  / (_| | |       | |  | | | | |_| | | | | (_| |  __/ |    | |_) | (_) | |_   | |_ ___) |
- |_| \_|_|\___|_|\_\___/     \/  \/ \__,_|_|       |_|  |_| |_|\__,_|_| |_|\__,_|\___|_|    |____/ \___/ \__|  |_(_)____/ 
-                                                                                                                          
-                                                                                                                          """
+  _   _ _      _                                                                   
+ | \ | (_) ___| | _____                                                            
+ |  \| | |/ __| |/ / __|                                                           
+ | |\  | | (__|   <\__ \                                                           
+ |_| \_|_|\___|_|\_\___/_____ _                     _             ____        _    
+ \ \      / /_ _ _ __  |_   _| |__  _   _ _ __   __| | ___ _ __  | __ )  ___ | |_  
+  \ \ /\ / / _` | '__|   | | | '_ \| | | | '_ \ / _` |/ _ \ '__| |  _ \ / _ \| __| 
+   \ V  V / (_| | |      | | | | | | |_| | | | | (_| |  __/ |    | |_) | (_) | |_  
+    \_/\_/ \__,_|_|      |_| |_| |_|\__,_|_| |_|\__,_|\___|_|    |____/ \___/ \__|
+ __     __  _   __   
+ \ \   / / / | / /_  
+  \ \ / /  | || '_ \ 
+   \ V /   | || (_) |
+    \_/    |_(_)___/ 
+"""
 # Main function
 def main():
     # Main menu
     print(title_banner)
-    print('Welcome to Nicks War Thunder Air Bot 1.1\nThis program is designed to help you generate silver lions AFK in War Thunder.\n\nSetup Instructions : \n1. Check the KeyBinds file and ensure that your keybinds are set up correctly\n2. Go to Hangar and have the Kfir Canard (Israel) selected \n3. Select "Air Realistic Battles"\n\nTo end the program press and hold "q" at any time')
+    print('Welcome to Nicks War Thunder Air Bot 1.6\nThis program is designed to help you generate silver lions AFK in War Thunder.\n\nSetup Instructions : \n1. Check the KeyBinds file and ensure that your keybinds are set up correctly\n2. Go to Hangar and have the Kfir Canard (Israel) selected \n3. Select "Air Realistic Battles"\n\nTo end the program press and hold "q" at any time')
 
     while True:
         # Prompt the user for input
