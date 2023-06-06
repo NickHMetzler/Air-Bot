@@ -29,39 +29,6 @@ for file in os.listdir(script_folder):
 # PyAutoGui Failsafe off
 pyautogui.FAILSAFE = False
 
-# Cruising Altitude for each Map
-HEIGHTS = {
-    'GolanHeights' : 560,
-    'Sinai1' : 150,
-    'Sinai2' : 800,
-    'Spain1' : 1100,
-    'Spain2' : 1290,
-    'Spain3' : 1100,
-    'Vietnam1' : 850,
-    'Vietnam2' : 1500,
-    'Vietnam3' : 850,
-    'RockyCanyon1' : 3000,
-    'RockyCanyon2' : 2500,
-    'City1' : 850,
-    'City2' : 850
-}
-# Bombing Distances for each Map
-DISTANCES = {
-    'GolanHeights' : 0.055,
-    'Sinai1' : 0.065,
-    'Sinai2' : 0.07,
-    'Spain1' : 0.075,
-    'Spain2' : 0.07,
-    'Spain3' : 0.075,
-    'Vietnam1' : 0.07,
-    'Vietnam2' : 0.07,
-    'Vietnam3' : 0.07,
-    'RockyCanyon1' : 0.2,
-    'RockyCanyon2' : 0.2,
-    'City1' : 0.15,
-    'City2' : 0.15
-}
-
 # Char/Str to Scancode for Bot Game Inputs
 # https://kbdlayout.info/kbdusx/scancodes
 KEYS = {
@@ -137,8 +104,24 @@ KEYS = {
   'left': 0x4B,
   'down': 0x50}
 
+# Cruising Altitude for each Map
+with open('data/heights.txt', 'r') as file:
+    # Read the contents of the file
+    contents = file.read()
+
+# Evaluate the contents as Python code
+HEIGHTS = eval(contents)
+
+# Bombing Distances for each Map
+with open('data/distances.txt', 'r') as file:
+    # Read the contents of the file
+    contents = file.read()
+
+# Evaluate the contents as Python code
+DISTANCES = eval(contents)
+
 # Get User's KeyBinds from file
-with open('keybinds.txt', 'r') as file:
+with open('data/keybinds.txt', 'r') as file:
     # Read the contents of the file
     contents = file.read()
 
@@ -437,6 +420,8 @@ def bot():
         elif pyautogui.locateOnScreen('assets/golan_heights.png', grayscale=False, confidence=0.97) != None:
             map = 'GolanHeights'
             screenshot_val = True
+        elif pyautogui.locateOnScreen('assets/golan_heights2.png', grayscale=False, confidence=0.97) != None:
+            map = 'GolanHeights2'
         elif pyautogui.locateOnScreen('assets/spain1.png', grayscale=False, confidence=0.97) != None:
             map = 'Spain1'
         elif pyautogui.locateOnScreen('assets/spain3.png', grayscale=False, confidence=0.97) != None:
