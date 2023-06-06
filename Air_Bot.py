@@ -17,6 +17,9 @@ import threading
 import requests
 import json
 import math
+import tkinter as tk
+from tkinter import messagebox
+from PIL import ImageTk, Image
 
 # Allow the use of relative paths
 os.chdir(os.path.dirname(__file__))
@@ -183,7 +186,7 @@ ctypes.pointer(extra) )
 # Finds the leftmost base
 def find_left_base():
     min_x = None
-
+    print('Finding...')
     for _ in range(5):
         pyautogui.press(KEYBINDS['ccrp'])
         position = pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7)
@@ -201,6 +204,7 @@ def find_left_base():
             x, _, _, _ = position
             if x == min_x:
                 break
+    print('FOUND IT')
 
 # Returns the current Height and Rate of Climb
 def get_attitude():
@@ -502,6 +506,7 @@ def bot():
         height = HEIGHTS[map]
 
         if map == 'Spain2' or map == 'Vietnam2':
+            print('Finding Left Base')
             find_left_base()
         
         # Hold down the bombing button
@@ -636,68 +641,62 @@ def bot():
             move_mouse_to_image('assets/to_hangar.png')
             click_mouse()
 
-
-#Operation Spain 1052m, 1 check
-#Operation Vietnam 670m, 2 check
-title_banner = """
-  _   _ _      _                                                                   
- | \ | (_) ___| | _____                                                            
- |  \| | |/ __| |/ / __|                                                           
- | |\  | | (__|   <\__ \                                                           
- |_| \_|_|\___|_|\_\___/_____ _                     _             ____        _    
- \ \      / /_ _ _ __  |_   _| |__  _   _ _ __   __| | ___ _ __  | __ )  ___ | |_  
-  \ \ /\ / / _` | '__|   | | | '_ \| | | | '_ \ / _` |/ _ \ '__| |  _ \ / _ \| __| 
-   \ V  V / (_| | |      | | | | | | |_| | | | | (_| |  __/ |    | |_) | (_) | |_  
-    \_/\_/ \__,_|_|      |_| |_| |_|\__,_|_| |_|\__,_|\___|_|    |____/ \___/ \__|
- __     __  _   __   
- \ \   / / / | / /_  
-  \ \ / /  | || '_ \ 
-   \ V /   | || (_) |
-    \_/    |_(_)___/ 
-"""
 # Main function
 def main():
-    # Main menu
-    print(title_banner)
-    print('Welcome to Nicks War Thunder Air Bot 1.6\nThis program is designed to help you generate silver lions AFK in War Thunder.\n\nSetup Instructions : \n1. Check the KeyBinds file and ensure that your keybinds are set up correctly\n2. Go to Hangar and have the Kfir Canard (Israel) selected \n3. Select "Air Realistic Battles"\n\nTo end the program press and hold "q" at any time')
+    # Function to start the bot
+    def start_bot():
+        # Prompt the user to Alt + Tab to War Thunder
+        messagebox.showinfo("Alt + Tab", "Please Alt + Tab to War Thunder")
 
-    while True:
-        # Prompt the user for input
-        user_input = input("\nPlease press Enter to execute program : ")
+        # Allow time for user to Alt + Tab
+        time.sleep(5)
 
-        # If the user presses enter, execute the program
-        if user_input == "":
-            time.sleep(2)
-            break
-        elif user_input == 'q' or user_input == 'Q':
-            end_program()
-        else:
-            print('CONSOLE: Error, "Enter" (Start Bot) or "q" (Quit Program) were not inputted')
+        # Create a thread for the bot
+        bot_thread = threading.Thread(target=bot)
 
+        # Start the bot
+        bot_thread.start()
 
-    # Allow time for User to Alt-Tab
-    print('\nCONSOLE: Starting Program...')
-    print('Please Alt + Tab to War Thunder\n')
-    for i in range(5):
-        print(f'CONSOLE: Starting Bot in {5 - i} Seconds...')
-        time.sleep(1)
+        # Check if the user presses key 'q' then quit the program
+        while True:
+            if keyboard.is_pressed('q'):
+                # handle the 'q' key press
+                print("CONSOLE: Exiting program")
+                # Quit the program
+                end_program()
 
-    # Create a thread for the bot
-    bot_thread = threading.Thread(target=bot)
+    # Create the main window
+    window = tk.Tk()
+    window.title("Nicks War Thunder Air Bot 1.6")
+    window.geometry("800x600")
+    window.configure(bg="#333333")
 
-    # Start the bot
-    bot_thread.start()
+    # Load the image
+    image_path = "assets/icons/icon.png"
+    image = tk.PhotoImage(file=image_path)
 
-    # Check if the user presses key 'q' then quit the program
-    while True:
-        if keyboard.is_pressed('q'):
-            # handle the 'q' key press
-            print("CONSOLE: Exiting program")
-            # Quit the program
-            end_program()
-        
-            
+    # Create a label widget for the image
+    image_label = tk.Label(window, image=image, bg="#333333")
+    image_label.pack(pady=20)
+
+    # Create the title label
+    title_label = tk.Label(window, text="Welcome to Nicks War Thunder Air Bot 1.6", font=("Arial", 20), bg="#333333", fg="#ffffff")
+    title_label.pack(pady=10)
+
+    # Create the setup instructions label
+    instructions_label = tk.Label(window, text="Setup Instructions:\n1. Check the KeyBinds file and ensure that your keybinds are set up correctly\n2. Go to Hangar and have the Kfir Canard (Israel) selected\n3. Select 'Air Realistic Battles'\n\nTo end the program, press and hold 'q' at any time", font=("Arial", 16), bg="#333333", fg="#ffffff")
+    instructions_label.pack(pady=7)
+
+    # Create the Start Bot button
+    start_button = tk.Button(window, text="Start Bot", font=("Arial", 16), command=start_bot)
+    start_button.pack(pady=10)
+
+    # Start the GUI main loop
+    window.mainloop()
 
 
 # Start the main thread
-main()
+if __name__ == "__main__":
+    main()
+     
+            
