@@ -189,19 +189,21 @@ def find_left_base():
     print('Finding...')
     for _ in range(5):
         pyautogui.press(KEYBINDS['ccrp'])
+        time.sleep(0.3)
         position = pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7)
         
         if position is not None:
-            x, _, _, _ = position
+            x = position[0]
             if min_x is None or x < min_x:
                 min_x = x
 
     while True:
         pyautogui.press(KEYBINDS['ccrp'])
+        time.sleep(0.3)
         position = pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7)
         
         if position is not None:
-            x, _, _, _ = position
+            x = position[0]
             if x == min_x:
                 break
     print('FOUND IT')
