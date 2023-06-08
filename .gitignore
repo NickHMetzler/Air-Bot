@@ -1,3 +1,4 @@
+tester.py
 assets/*
 data/*
 !assets/icons

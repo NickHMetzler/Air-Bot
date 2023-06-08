@@ -179,6 +179,39 @@ def get_elapsed_time(startTime):
 #   Query Functions   #
 #######################
 
+# Returns the angle toward the enemy airfield
+def get_field_heading():
+    url = 'http://localhost:8111/map_obj.json'  
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        json_data = json.loads(response.text)
+        # Extract x and y values where icon is "Player"
+        player = next((obj for obj in json_data if obj["icon"] == "Player"), None)
+        field = next((obj for obj in json_data if obj["type"] == "airfield" and obj["color"] == "#fa0C00"), None)
+        if player and field:
+            x = player["x"]
+            y = player["y"]
+            dx = player["dx"]
+            dy = player["dy"]
+            field_x = field["sx"]
+            field_y = field["sy"]
+            
+            # Calculate the angle between the current direction and the target location
+            angle = math.atan2(field_y - y, field_x - x)
+
+            # Calculate the plane's facing angle
+            facing_angle = math.atan2(dy, dx)
+
+            # Calculate the angle to turn towards the airfield
+            turn_angle = angle - facing_angle
+
+            # Convert the angle from radians to degrees
+            angle_degrees = math.degrees(turn_angle)
+            print(f'Airfield is heading: {angle_degrees}')
+            return angle_degrees
+            
+
 # Returns the current Height and Rate of Climb
 def get_attitude():
     url = 'http://localhost:8111/state'
@@ -194,47 +227,49 @@ def get_attitude():
         return return_data
 
 # Returns the distance from the Base
-def get_distance(map):
+def get_distance(map, base):
     url = 'http://localhost:8111/map_obj.json'  
     response2 = requests.get(url)
-
+    distance = 0
+    base_loc = base
     if response2.status_code == 200:
         json_data = json.loads(response2.text)
         # Extract x and y values where icon is "Player"
         points = []
         x = None
         y = None
-        for obj in json_data:
-            if obj["icon"] == "Player":
-                # print("Player Coordinates:")
-                x = obj["x"]
-                y = obj["y"]
-            if obj["type"] == "bombing_point":
-                points.append(obj["x"])
-            
+        player = next((obj for obj in json_data if obj["icon"] == "Player"), None)
+        if player:
+            # print("Player Coordinates:")
+            x = player["x"]
+            y = player["y"]
+        points = next((obj["x"] for obj in json_data if obj["type"] == "bombing_point"), [])
         points_sorted = sorted(set(points))
-        if map == 'RockyCanyon' or map == 'VietnamALT':
-            index = 0
-        elif map == 'CityALT':
-            index = 2
-        elif map == 'GolanHeightsALT' or map == 'SpainALT' or map == 'SinaiALT':
-            index = 3
-        elif map == 'SpainEC' or map == 'VietnamEC':
-            index = 4
-        else:
-            index = 1
-        if x is not None and index < len(points_sorted):
-            chosen_point = points_sorted[index] 
-            point_x = None
-            point_y = None
-            for obj in json_data:
-                if obj["type"] == "bombing_point" and obj["x"] == chosen_point:
-                    point_x = obj["x"]
-                    point_y = obj["y"]
-            distance = math.sqrt((x - point_x)**2 + (y - point_y)**2)
-        else:
-            distance = 0
-        #print(f'Distance from the base is: {distance}')
+        if x is not None:
+            if base_loc == -0.001:
+                # Pick the index based on map
+                if map == 'RockyCanyon':
+                    index = 0
+                elif map == 'CityALT':
+                    index = 2
+                elif map == 'GolanHeightsALT' or map == 'SpainALT' or map == 'SinaiALT' or map == 'VietnamALT':
+                    index = 3
+                elif map == 'SpainEC' or map == 'VietnamEC':
+                    index = 4
+                else:
+                    index = 1
+                if index < len(points_sorted):
+                    chosen_point = points_sorted[index] 
+                    point_x = None
+                    point_y = None
+                    for obj in json_data:
+                        if obj["type"] == "bombing_point" and obj["x"] == chosen_point:
+                            point_x = obj["x"]
+                            point_y = obj["y"]
+                            base_loc = (point_x, point_y)
+            distance = math.sqrt((x - base_loc[0])**2 + (y - base_loc[1])**2)
+         
+        print(f'Distance from the base is: {distance}')
         return distance
 
 
@@ -341,9 +376,9 @@ def bot():
         ec = False
         if pyautogui.locateOnScreen('assets/vietnam.png', grayscale=False, confidence=0.97) != None:
             map = 'Vietnam'
-        if pyautogui.locateOnScreen('assets/vietnamALT.png', grayscale=False, confidence=0.96) != None:
+        elif pyautogui.locateOnScreen('assets/vietnamALT.png', grayscale=False, confidence=0.96) != None:
             map = 'VietnamALT'
-        if pyautogui.locateOnScreen('assets/vietnamEC.png', grayscale=False, confidence=0.97) != None:
+        elif pyautogui.locateOnScreen('assets/vietnamEC.png', grayscale=False, confidence=0.97) != None:
             map = 'VietnamEC'
             ec = True
             screenshot_val = True
@@ -417,15 +452,19 @@ def bot():
             print('CONSOLE: Activating CCRP')
             press(KEYBINDS['ccrp'])
 
-            while get_elapsed_time(battle_time) < 45.0:
-                time.sleep(0.1)
-            # Retract gear
+            # Retract gear when taken off
+            ground = get_attitude()[0]
+            height = get_attitude()[0]
+            while height <= ground + 10:
+                height = get_attitude()[0]
             print('CONSOLE: Retracting Landing Gear')
             press(KEYBINDS['gear'])
+
             # Choose base target
             print('CONSOLE: Choosing Target Base')
             press(KEYBINDS['ccrp'])
-            while pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) == None:
+            while pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) == None and height < HEIGHTS[map]/2:
+                height = get_attitude()[0]
                 time.sleep(0.1)
             # Pitch down a few times
             for i in range(3):
@@ -449,6 +488,7 @@ def bot():
         # Set variables for game loop
         battle_time = time.time()
         zoom_time = 0
+        base_loc = -0.001
         zoom_flag = False
         brake_flag = False
         if city == True:
@@ -518,7 +558,7 @@ def bot():
                 pitch_flag = True
 
             # Hit the airbrake and turn off afterburner when close to the base
-            distance = get_distance(map)
+            distance = get_distance(map, base_loc)
             if brake_flag == False and distance <= map_distance:
                 print('CONSOLE: Deploying Airbrake')
                 press(KEYBINDS['airbrake'])
@@ -650,7 +690,7 @@ def main():
                 formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
                 # Print the formatted time
-                print(formatted_time)
+                print(f'Bot was running for: {formatted_time}')
                 end_program()
 
     # Create the main window
