@@ -20,6 +20,7 @@ import math
 import tkinter as tk
 from tkinter import messagebox
 from PIL import ImageTk, Image
+import datetime
 
 # Allow the use of relative paths
 os.chdir(os.path.dirname(__file__))
@@ -183,6 +184,28 @@ ctypes.pointer(extra) )
 #################
 #   Functions   #
 #################
+
+def is_image_on_screen(image_path, grayscale=True, confidence=0.7):
+    try:
+        position = pyautogui.locateOnScreen(image_path, grayscale=grayscale, confidence=confidence)
+        if position is not None:
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(f"Error: {e}")
+        return False
+
+# Wait on - Waiting on the image to leave
+def wait_on(image_path, grayscale=True, confidence=0.7):
+    while is_image_on_screen(image_path, grayscale, confidence):
+        time.sleep(0.2)
+
+#Wait for - Waiting for the image to appear
+def wait_for(image_path, grayscale=True, confidence=0.7):
+    while is_image_on_screen(image_path, grayscale, confidence) == False:
+        time.sleep(0.2)
+
 # Finds the leftmost base
 def find_left_base():
     min_x = None
@@ -253,6 +276,7 @@ def get_distance(map):
             index = 4
         else:
             index = 1
+        print(f'Points x are at: {points_sorted}\nPlane x,y is: {x},{y}')
         if x is not None and index < len(points_sorted):
             chosen_point = points_sorted[index] 
             point_x = None  # Initialize point_x with a default value
@@ -398,11 +422,9 @@ def bot():
         while pyautogui.locateCenterOnScreen('assets/spawn.png', grayscale=False, confidence=0.8) == None:
             time.sleep(0.1)
         
-        # In Battle, click the Spawn In button
-        press(KEYBINDS['enter'])
-        print("CONSOLE: Spawn Button Clicked") 
+        
+
         move_mouse_to(100, 100)
-        time.sleep(np.random.uniform(0.5,0.7))
         # Temp Variable
         screenshot_val = False
 
@@ -415,20 +437,20 @@ def bot():
             screenshot_val = True
         elif pyautogui.locateOnScreen('assets/vietnam1.png', grayscale=False, confidence=0.97) != None:
             map = 'Vietnam1'
-        elif pyautogui.locateOnScreen('assets/golan_heights1.png', grayscale=False, confidence=0.97) != None:
+        elif pyautogui.locateOnScreen('assets/golan_heights1.png', grayscale=False, confidence=0.99) != None:
             map = 'GolanHeights1'
-        elif pyautogui.locateOnScreen('assets/golan_heights2.png', grayscale=False, confidence=0.97) != None:
+        elif pyautogui.locateOnScreen('assets/golan_heights2.png', grayscale=False, confidence=0.99) != None:
             map = 'GolanHeights2'
-        elif pyautogui.locateOnScreen('assets/spain1.png', grayscale=False, confidence=0.97) != None:
+        elif pyautogui.locateOnScreen('assets/spain1.png', grayscale=False, confidence=0.99) != None:
             map = 'Spain1'
-        elif pyautogui.locateOnScreen('assets/spain3.png', grayscale=False, confidence=0.97) != None:
+        elif pyautogui.locateOnScreen('assets/spain3.png', grayscale=False, confidence=0.99) != None:
             map = 'Spain3'
         elif pyautogui.locateOnScreen('assets/spain2.png', grayscale=False, confidence=0.97) != None:
             map = 'Spain2'
             screenshot_val = True
-        elif pyautogui.locateOnScreen('assets/sinai1.png', grayscale=False, confidence=0.97) != None:
+        elif pyautogui.locateOnScreen('assets/sinai1.png', grayscale=False, confidence=0.98) != None:
             map = 'Sinai1'
-        elif pyautogui.locateOnScreen('assets/sinai2.png', grayscale=False, confidence=0.97) != None:
+        elif pyautogui.locateOnScreen('assets/sinai2.png', grayscale=False, confidence=0.98) != None:
             map = 'Sinai2'
         elif pyautogui.locateOnScreen('assets/city2.png', grayscale=False, confidence=0.97) != None:
             map = 'City2'
@@ -437,11 +459,29 @@ def bot():
         elif pyautogui.locateOnScreen('assets/rocky_canyon2.png', grayscale=False, confidence=0.97) != None:
             map = 'RockyCanyon2'
             screenshot_val = True
+        elif pyautogui.locateOnScreen('assets/afghanistan.png', grayscale=False, confidence=0.97) != None:
+            map = 'RockyCanyon2'
         else:
             screenshot_val = True
         # Temp condition
         if screenshot_val == True: 
             screenshot_screen()
+
+
+    
+        if map == 'Spain2' or map == 'Vietnam2' or map == 'RockyCanyon2':
+            # temp until solution found
+            press('esc')
+            move_mouse_to(1274, 630)
+            click_mouse()
+            move_mouse_to(1224, 619)
+            click_mouse()
+        # In Battle, click the Spawn In button
+        else:
+            press(KEYBINDS['enter'])
+            print("CONSOLE: Spawn Button Clicked") 
+            time.sleep(1)
+            
 
         print(f'CONSOLE: Map is {map}')
 
@@ -451,12 +491,11 @@ def bot():
 
         # Take off/spawn procedure
         battle_time = time.time()
-        if map != 'City1' and map != 'City2':
+        if map != 'City1' and map != 'City2' and map != 'Spain2' and map != 'Vietnam2' and map != 'RockyCanyon2':
             # Wait to Spawn in
-            print('CONSOLE: Waiting to Spawn In')
-            while pyautogui.locateOnScreen('assets/cancel.png', grayscale=False, confidence=0.7) != None:
-                time.sleep(0.1)
-            start_time = time.time()
+            print('CONSOLE: Waiting to Spawn In Main')
+            wait_on('assets/cancel_spawn.png')
+            print('Did not find the cancel button')
             # Throttle up, then pitch up
             holdFor('w', 4)
             move_mouse_by(0, -pitch_value)
@@ -478,12 +517,10 @@ def bot():
                     move_mouse_by(0, downVal + 5)
                     time.sleep(1)
         # Air Spawn
-        else:
+        elif map != 'Spain2' and map != 'Vietnam2' and map != 'RockyCanyon2':
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn In')
-            while pyautogui.locateOnScreen('assets/cancel.png', grayscale=False, confidence=0.7) != None:
-                time.sleep(0.1)
-            start_time = time.time()
+            wait_on('assets/cancel_spawn.png', 0.7)
             # Afterburner
             press('w')
             # Start CCRP and choose base
@@ -506,9 +543,7 @@ def bot():
         map_distance = DISTANCES[map]
         height = HEIGHTS[map]
 
-        if map == 'Spain2' or map == 'Vietnam2':
-            print('Finding Left Base')
-            find_left_base()
+        
         
         # Hold down the bombing button
         hold(KEYBINDS['bomb'])
@@ -612,35 +647,51 @@ def bot():
         if pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) != None:
             holdFor('j', 4)
             print('CONSOLE: Aircraft Downed, Returning to Hangar')
+
             # Click 'Return To Hangar' Button
-            while pyautogui.locateCenterOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.75) == None:
-                time.sleep(0.1)
-            move_mouse_to_image('assets/return_to_hangar.png')
-            click_mouse()
+            wait_for('assets/return_to_hangar.png', False, 0.75)
+            while pyautogui.locateCenterOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.75) != None:
+                move_mouse_to_image('assets/return_to_hangar.png')
+                click_mouse()
+                move_mouse_to(100, 100)
+                time.sleep(2)
             
+            # Wait for 'To Hangar' Button
+            wait_for('assets/to_hangar.png', False, 0.75)
             # Click 'To Hangar' Button
-            while pyautogui.locateCenterOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.75) == None:
-                time.sleep(0.1)
-            move_mouse_to_image('assets/to_hangar.png')
-            click_mouse()
+            while pyautogui.locateCenterOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.75) != None:
+                move_mouse_to_image('assets/to_hangar.png')
+                click_mouse()
+                move_mouse_to(100, 100)
+                time.sleep(2)
+                
+            
         elif pyautogui.locateCenterOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.75) != None:
             print('CONSOLE: Aircraft Downed, Returning to Hangar')
-            # Click 'Return To Hangar' Button
-            move_mouse_to_image('assets/return_to_hangar.png')
-            click_mouse()
+            while pyautogui.locateCenterOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.75) != None:
+                move_mouse_to_image('assets/return_to_hangar.png')
+                click_mouse()
+                move_mouse_to(100, 100)
+                time.sleep(2)
 
+            # Wait for 'To Hangar' Button
+            wait_for('assets/to_hangar.png', False, 0.75)
             # Click 'To Hangar' Button
-            while pyautogui.locateCenterOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.75) == None:
-                time.sleep(0.1)
-            move_mouse_to_image('assets/to_hangar.png')
-            click_mouse()
+            while pyautogui.locateCenterOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.75) != None:
+                move_mouse_to_image('assets/to_hangar.png')
+                click_mouse()
+                move_mouse_to(100, 100)
+                time.sleep(2)
 
         # Match has ended
         else:
             print('CONSOLE: Match Ended, Returning to Hangar')
             # Click 'To Hangar' Button
-            move_mouse_to_image('assets/to_hangar.png')
-            click_mouse()
+            while pyautogui.locateCenterOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.75) != None:
+                move_mouse_to_image('assets/to_hangar.png')
+                click_mouse()
+                move_mouse_to(100, 100)
+                time.sleep(2)
 
 # Main function
 def main():
@@ -658,12 +709,29 @@ def main():
         # Start the bot
         bot_thread.start()
 
+        launch_time = time.time()
+
         # Check if the user presses key 'q' then quit the program
         while True:
             if keyboard.is_pressed('q'):
                 # handle the 'q' key press
                 print("CONSOLE: Exiting program")
                 # Quit the program
+                time.sleep(1)
+                elapsed_time = get_elapsed_time(launch_time)
+                # Convert the elapsed time into a timedelta object
+                time_delta = datetime.timedelta(seconds=elapsed_time)
+
+                # Get the hours, minutes, and seconds from the timedelta object
+                hours = time_delta.seconds // 3600
+                minutes = (time_delta.seconds % 3600) // 60
+                seconds = time_delta.seconds % 60
+
+                # Format the time as HH:MM:SS
+                formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+                # Print the formatted time
+                print(formatted_time)
                 end_program()
 
     # Create the main window
