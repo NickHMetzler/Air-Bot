@@ -242,7 +242,7 @@ def get_attitude():
 
         # Access the value of "H, m"
         return_data = (json_data["H, m"], json_data["Vy, m/s"])
-        print(f'Height is: {return_data[0]}m\nRate of Climb is: {return_data[1]}')
+        # print(f'Height is: {return_data[0]}m\nRate of Climb is: {return_data[1]}')
         return return_data
 
 # Returns the distance from the Base
@@ -259,7 +259,7 @@ def get_distance(map):
         y = None  # Initialize y with a default value
         for obj in json_data:
             if obj["icon"] == "Player":
-                print("Player Coordinates:")
+                # print("Player Coordinates:")
                 x = obj["x"]
                 y = obj["y"]
             if obj["type"] == "bombing_point":
@@ -276,7 +276,6 @@ def get_distance(map):
             index = 4
         else:
             index = 1
-        print(f'Points x are at: {points_sorted}\nPlane x,y is: {x},{y}')
         if x is not None and index < len(points_sorted):
             chosen_point = points_sorted[index] 
             point_x = None  # Initialize point_x with a default value
@@ -288,7 +287,7 @@ def get_distance(map):
             distance = math.sqrt((x - point_x)**2 + (y - point_y)**2)
         else:
             distance = 0
-        print(f'Distance from the base is: {distance}')
+        #print(f'Distance from the base is: {distance}')
         return distance
 
 
@@ -303,7 +302,7 @@ def get_mach():
 
         # Access the value of "H, m"
         return_data = json_data["mach"]
-        print(f'Plane is at Mach {return_data}')
+        #print(f'Plane is at Mach {return_data}')
         return return_data
     
 # Temp Function
@@ -418,7 +417,7 @@ def bot():
         print("CONSOLE: To Battle!")
 
         # Wait to Join Battle
-        print(f'CONSOLE: Waiting in Qeue...')
+        print('CONSOLE: Waiting in Qeue...')
         while pyautogui.locateCenterOnScreen('assets/spawn.png', grayscale=False, confidence=0.8) == None:
             time.sleep(0.1)
         
@@ -493,9 +492,9 @@ def bot():
         battle_time = time.time()
         if map != 'City1' and map != 'City2' and map != 'Spain2' and map != 'Vietnam2' and map != 'RockyCanyon2':
             # Wait to Spawn in
-            print('CONSOLE: Waiting to Spawn In Main')
+            print('CONSOLE: Waiting to Spawn on Airfield')
             wait_on('assets/cancel_spawn.png')
-            print('Did not find the cancel button')
+            print('CONSOLE: Spawned in')
             # Throttle up, then pitch up
             holdFor('w', 4)
             move_mouse_by(0, -pitch_value)
@@ -507,8 +506,10 @@ def bot():
             while get_elapsed_time(battle_time) < 45.0:
                 time.sleep(0.1)
             # Retract gear
+            print('CONSOLE: Retracting Landing Gear')
             press(KEYBINDS['gear'])
             # Choose base target
+            print('CONSOLE: Choosing Target Base')
             press(KEYBINDS['ccrp'])
             while pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) == None:
                 time.sleep(0.1)
@@ -519,7 +520,7 @@ def bot():
         # Air Spawn
         elif map != 'Spain2' and map != 'Vietnam2' and map != 'RockyCanyon2':
             # Wait to Spawn in
-            print('CONSOLE: Waiting to Spawn In')
+            print('CONSOLE: Waiting to Spawn In Airspawn')
             wait_on('assets/cancel_spawn.png', 0.7)
             # Afterburner
             press('w')
@@ -528,6 +529,7 @@ def bot():
             print('CONSOLE: Activating CCRP')
             press(KEYBINDS['ccrp'])
             time.sleep(5)
+            print('CONSOLE: Choosing Target Base')
             press(KEYBINDS['ccrp'])
 
         # Set variables for game loop
@@ -583,6 +585,7 @@ def bot():
             
             # Release flares while subsonic
             if brake_flag == True:
+                print('CONSOLE: Popping Flares')
                 pyautogui.scroll(-2)
                 pyautogui.scroll(2)
                 
@@ -590,6 +593,7 @@ def bot():
             if brake_flag == True and mach_flag == False:
                 mach = get_mach()
                 if mach < 1.0:
+                    print('CONSOLE: Retracting Airbrake')
                     press(KEYBINDS['airbrake'])
                     mach_flag = True
 
@@ -604,6 +608,7 @@ def bot():
             # Hit the airbrake and turn off afterburner when close to the base
             distance = get_distance(map)
             if brake_flag == False and distance <= map_distance:
+                print('CONSOLE: Deploying Airbrake')
                 press(KEYBINDS['airbrake'])
                 pyautogui.scroll(-2) 
                 brake_flag = True
