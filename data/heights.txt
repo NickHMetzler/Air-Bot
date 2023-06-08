@@ -1,0 +1,16 @@
+{
+'GolanHeights' : 560,
+'GolanHeightsALT' : 1200,
+'Sinai' : 150,
+'SinaiALT' : 800,
+'Spain' : 1100,
+'SpainALT' : 1100,
+'SpainEC' : 1290,
+'Vietnam' : 850,
+'VietnamALT' : 850,
+'VietnamEC' : 1500,
+'RockyCanyon' : 3000,
+'RockyCanyonALT' : 2500,
+'City' : 850,
+'CityALT' : 850
+}

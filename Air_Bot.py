@@ -19,7 +19,6 @@ import json
 import math
 import tkinter as tk
 from tkinter import messagebox
-from PIL import ImageTk, Image
 import datetime
 
 # Allow the use of relative paths
@@ -33,80 +32,19 @@ for file in os.listdir(script_folder):
 # PyAutoGui Failsafe off
 pyautogui.FAILSAFE = False
 
+
+###############################
+#          Constants          #
+###############################
+
 # Char/Str to Scancode for Bot Game Inputs
 # https://kbdlayout.info/kbdusx/scancodes
-KEYS = {
-  'a': 0x1E,
-  'b': 0x30,
-  'c': 0x2E,
-  'd': 0x20,
-  'e': 0x12,
-  'f': 0x21,
-  'g': 0x22,
-  'h': 0x23,
-  'i': 0x17,
-  'j': 0x24,
-  'k': 0x25,
-  'l': 0x26,
-  'm': 0x32,
-  'n': 0x31,
-  'o': 0x18,
-  'p': 0x19,
-  'q': 0x10,
-  'r': 0x13,
-  's': 0x1F,
-  't': 0x14,
-  'u': 0x16,
-  'v': 0x2F,
-  'w': 0x11,
-  'x': 0x2D,
-  'y': 0x15,
-  'z': 0x2C,
-  '1': 0x02,
-  '2': 0x03,
-  '3': 0x04,
-  '4': 0x05,
-  '5': 0x06,
-  '6': 0x07,
-  '7': 0x08,
-  '8': 0x09,
-  '9': 0x0A,
-  '0': 0x0B,
-  'enter': 0x1C,
-  'esc': 0x01,
-  'backspace': 0x0E,
-  'tab': 0x0F,
-  ' ': 0x39,
-  '-': 0x0C,
-  '=': 0x0D,
-  '[': 0x1A,
-  ']': 0x1B,
-  '\\': 0x2B,
-  '#': 0x0E,
-  ';': 0x27,
-  '\'': 0x28,
-  '`': 0x29,
-  ',': 0x33,
-  '.': 0x34,
-  '/': 0x35,
-  'caps': 0x3A,
-  'l_shift' : 0x2A,
-  'f1': 0x3B,
-  'f2': 0x3C,
-  'f3': 0x3D,
-  'f4': 0x3E,
-  'f5': 0x3F,
-  'f6': 0x40,
-  'f7': 0x41,
-  'f8': 0x42,
-  'f9': 0x43,
-  'f10': 0x44,
-  'f11': 0x57,
-  'f12': 0x58,
-  'up': 0x48,
-  'right': 0x4D,
-  'left': 0x4B,
-  'down': 0x50}
+with open('data/keycodes.txt', 'r') as file:
+    # Read the contents of the file
+    contents = file.read()
+
+# Evaluate the contents as Python code
+KEYS = eval(contents)
 
 # Cruising Altitude for each Map
 with open('data/heights.txt', 'r') as file:
@@ -133,8 +71,9 @@ with open('data/keybinds.txt', 'r') as file:
 KEYBINDS = eval(contents)
 
 ###############################
-#   C struct redefinitions    #
+#   C Struct Redefinitions    #
 ###############################
+
 PUL = ctypes.POINTER(ctypes.c_ulong)
 class KeyBdInput(ctypes.Structure):
     _fields_ = [("wVk", ctypes.c_ushort),
@@ -181,131 +120,11 @@ ctypes.pointer(extra) )
     ctypes.windll.user32.SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
 
 
-#################
-#   Functions   #
-#################
+#######################
+#   Image Functions   #
+#######################
 
-def is_image_on_screen(image_path, grayscale=True, confidence=0.7):
-    try:
-        position = pyautogui.locateOnScreen(image_path, grayscale=grayscale, confidence=confidence)
-        if position is not None:
-            return True
-        else:
-            return False
-    except Exception as e:
-        print(f"Error: {e}")
-        return False
-
-# Wait on - Waiting on the image to leave
-def wait_on(image_path, grayscale=True, confidence=0.7):
-    while is_image_on_screen(image_path, grayscale, confidence):
-        time.sleep(0.2)
-
-#Wait for - Waiting for the image to appear
-def wait_for(image_path, grayscale=True, confidence=0.7):
-    while is_image_on_screen(image_path, grayscale, confidence) == False:
-        time.sleep(0.2)
-
-# Finds the leftmost base
-def find_left_base():
-    min_x = None
-    print('Finding...')
-    for _ in range(5):
-        pyautogui.press(KEYBINDS['ccrp'])
-        time.sleep(0.3)
-        position = pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7)
-        
-        if position is not None:
-            x = position[0]
-            if min_x is None or x < min_x:
-                min_x = x
-
-    while True:
-        pyautogui.press(KEYBINDS['ccrp'])
-        time.sleep(0.3)
-        position = pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7)
-        
-        if position is not None:
-            x = position[0]
-            if x == min_x:
-                break
-    print('FOUND IT')
-
-# Returns the current Height and Rate of Climb
-def get_attitude():
-    url = 'http://localhost:8111/state'
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        # Parse the JSON string
-        json_data = json.loads(response.text)
-
-        # Access the value of "H, m"
-        return_data = (json_data["H, m"], json_data["Vy, m/s"])
-        # print(f'Height is: {return_data[0]}m\nRate of Climb is: {return_data[1]}')
-        return return_data
-
-# Returns the distance from the Base
-def get_distance(map):
-    url = 'http://localhost:8111/map_obj.json'  
-    response2 = requests.get(url)
-
-    if response2.status_code == 200:
-        # Request successful
-        json_data = json.loads(response2.text)
-        # Extract x and y values where icon is "Player"
-        points = []
-        x = None  # Initialize x with a default value
-        y = None  # Initialize y with a default value
-        for obj in json_data:
-            if obj["icon"] == "Player":
-                # print("Player Coordinates:")
-                x = obj["x"]
-                y = obj["y"]
-            if obj["type"] == "bombing_point":
-                points.append(obj["x"])
-            
-        points_sorted = sorted(set(points))  # Remove duplicates and sort the values
-        if map == 'GolanHeights2' or map == 'Spain3' or map == 'Sinai2':
-            index = 3
-        elif map == 'RockyCanyon' or map == 'Vietnam3':
-            index = 0
-        elif map == 'City2':
-            index = 2
-        elif map == 'Spain2' or map == 'Vietnam2':
-            index = 4
-        else:
-            index = 1
-        if x is not None and index < len(points_sorted):
-            chosen_point = points_sorted[index] 
-            point_x = None  # Initialize point_x with a default value
-            point_y = None  # Initialize point_y with a default value
-            for obj in json_data:
-                if obj["type"] == "bombing_point" and obj["x"] == chosen_point:
-                    point_x = obj["x"]
-                    point_y = obj["y"]
-            distance = math.sqrt((x - point_x)**2 + (y - point_y)**2)
-        else:
-            distance = 0
-        #print(f'Distance from the base is: {distance}')
-        return distance
-
-
-# Returns the speed in Mach
-def get_mach():
-    url = 'http://localhost:8111/indicators'  # Replace with your URL
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        # Parse the JSON string
-        json_data = json.loads(response.text)
-
-        # Access the value of "H, m"
-        return_data = json_data["mach"]
-        #print(f'Plane is at Mach {return_data}')
-        return return_data
-    
-# Temp Function
+# Temp Function (Screenshots the screen)
 def screenshot_screen():
     folder_path = 'assets/screenshots/'
     # Get a list of existing files in the folder
@@ -328,11 +147,116 @@ def screenshot_screen():
     # Save the screenshot with the new file name
     myScreenshot.save(os.path.join(folder_path, file_name))
 
-# End Program
-def end_program():
-    # Send the signal to terminate the program
-    os.kill(os.getpid(), 9)
+# Check if given image is on the screen
+def is_image_on_screen(image_path, grayscale=True, confidence=0.7):
+    try:
+        position = pyautogui.locateOnScreen(image_path, grayscale=grayscale, confidence=confidence)
+        if position is not None:
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(f"Error: {e}")
+        return False
 
+# Wait on - Waiting on the image to leave
+def wait_on(image_path, grayscale=True, confidence=0.7):
+    while is_image_on_screen(image_path, grayscale, confidence):
+        time.sleep(0.2)
+
+# Wait for - Waiting for the image to appear
+def wait_for(image_path, grayscale=True, confidence=0.7):
+    while is_image_on_screen(image_path, grayscale, confidence) == False:
+        time.sleep(0.2)
+
+# Function to calculate the elapsed time
+def get_elapsed_time(startTime):
+    current_time = time.time()
+    elapsed_time = current_time - startTime
+    return elapsed_time
+
+#######################
+#   Query Functions   #
+#######################
+
+# Returns the current Height and Rate of Climb
+def get_attitude():
+    url = 'http://localhost:8111/state'
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        # Parse the JSON string
+        json_data = json.loads(response.text)
+
+        # Access the value of "H, m"
+        return_data = (json_data["H, m"], json_data["Vy, m/s"])
+        # print(f'Height is: {return_data[0]}m\nRate of Climb is: {return_data[1]}')
+        return return_data
+
+# Returns the distance from the Base
+def get_distance(map):
+    url = 'http://localhost:8111/map_obj.json'  
+    response2 = requests.get(url)
+
+    if response2.status_code == 200:
+        json_data = json.loads(response2.text)
+        # Extract x and y values where icon is "Player"
+        points = []
+        x = None
+        y = None
+        for obj in json_data:
+            if obj["icon"] == "Player":
+                # print("Player Coordinates:")
+                x = obj["x"]
+                y = obj["y"]
+            if obj["type"] == "bombing_point":
+                points.append(obj["x"])
+            
+        points_sorted = sorted(set(points))
+        if map == 'RockyCanyon' or map == 'VietnamALT':
+            index = 0
+        elif map == 'CityALT':
+            index = 2
+        elif map == 'GolanHeightsALT' or map == 'SpainALT' or map == 'SinaiALT':
+            index = 3
+        elif map == 'SpainEC' or map == 'VietnamEC':
+            index = 4
+        else:
+            index = 1
+        if x is not None and index < len(points_sorted):
+            chosen_point = points_sorted[index] 
+            point_x = None
+            point_y = None
+            for obj in json_data:
+                if obj["type"] == "bombing_point" and obj["x"] == chosen_point:
+                    point_x = obj["x"]
+                    point_y = obj["y"]
+            distance = math.sqrt((x - point_x)**2 + (y - point_y)**2)
+        else:
+            distance = 0
+        #print(f'Distance from the base is: {distance}')
+        return distance
+
+
+# Returns the speed in Mach
+def get_mach():
+    url = 'http://localhost:8111/indicators'
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        # Parse the JSON string
+        json_data = json.loads(response.text)
+
+        # Access the value of "H, m"
+        return_data = json_data["mach"]
+        #print(f'Plane is at Mach {return_data}')
+        return return_data
+
+#########################
+#   Control Functions   #
+#########################
+
+# Click mouse
 def click_mouse():
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0) 
     time.sleep(np.random.uniform(0.7,1.2)) 
@@ -346,18 +270,6 @@ def move_mouse_to(x, y):
 def move_mouse_by(x, y):
     win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, x, y, 0, 0)
 
-# Click the provided button
-def click_button(image_path):
-    button = pyautogui.locateCenterOnScreen(image_path, grayscale=False, confidence=0.75)
-    if button != None:
-        move_mouse_to(button[0], button[1])
-        time.sleep(np.random.uniform(0.9,1.2))
-        click(button[0], button[1])
-        button = pyautogui.locateCenterOnScreen(image_path, grayscale=False, confidence=0.75)
-        return True
-    else:
-        return False
-
 # Move the Mouse to a given image
 def move_mouse_to_image(image_path):
     image = pyautogui.locateCenterOnScreen(image_path, grayscale=False, confidence=0.75)
@@ -368,7 +280,6 @@ def move_mouse_to_image(image_path):
     else:
         return False
 
-# Syntax is lowercase
 # Hold a given key
 def hold(key):
     pressKey(KEYS[key])
@@ -396,16 +307,18 @@ def type(key):
     time.sleep(np.random.uniform(0.1,0.3)) 
     release(key)
 
-# Function to calculate the elapsed time
-def get_elapsed_time(startTime):
-    current_time = time.time()
-    elapsed_time = current_time - startTime
-    return elapsed_time
+#########################
+#   General Functions   #
+#########################
+
+# End Program
+def end_program():
+    # Send the signal to terminate the program
+    os.kill(os.getpid(), 9)
 
 # Bot Loop
 def bot():
     while True:
-
         # Click 'To Battle' Button in Main Menu
         while pyautogui.locateOnScreen('assets/in_queue.png', grayscale=False, confidence=0.75) == None:
             # Do not click if the vehicle needs to be repaired
@@ -418,57 +331,58 @@ def bot():
 
         # Wait to Join Battle
         print('CONSOLE: Waiting in Qeue...')
-        while pyautogui.locateCenterOnScreen('assets/spawn.png', grayscale=False, confidence=0.8) == None:
-            time.sleep(0.1)
+        wait_for('assets/spawn.png', grayscale=False, confidence=0.8)
         
-        
-
+        # Check which map match is taking place on
         move_mouse_to(100, 100)
         # Temp Variable
         screenshot_val = False
-
-        # Figure out which map
-        if pyautogui.locateOnScreen('assets/vietnam3.png', grayscale=False, confidence=0.96) != None:
-            map = 'Vietnam3'
+        city = False
+        ec = False
+        if pyautogui.locateOnScreen('assets/vietnam.png', grayscale=False, confidence=0.97) != None:
+            map = 'Vietnam'
+        if pyautogui.locateOnScreen('assets/vietnamALT.png', grayscale=False, confidence=0.96) != None:
+            map = 'VietnamALT'
+        if pyautogui.locateOnScreen('assets/vietnamEC.png', grayscale=False, confidence=0.97) != None:
+            map = 'VietnamEC'
+            ec = True
             screenshot_val = True
-        elif pyautogui.locateOnScreen('assets/vietnam2.png', grayscale=False, confidence=0.97) != None:
-            map = 'Vietnam2'
+        elif pyautogui.locateOnScreen('assets/spain.png', grayscale=False, confidence=0.99) != None:
+            map = 'Spain'
+        elif pyautogui.locateOnScreen('assets/spainALT.png', grayscale=False, confidence=0.99) != None:
+            map = 'SpainALT'
+        elif pyautogui.locateOnScreen('assets/spainEC.png', grayscale=False, confidence=0.97) != None:
+            map = 'SpainEC'
+            ec = True
             screenshot_val = True
-        elif pyautogui.locateOnScreen('assets/vietnam1.png', grayscale=False, confidence=0.97) != None:
-            map = 'Vietnam1'
-        elif pyautogui.locateOnScreen('assets/golan_heights1.png', grayscale=False, confidence=0.99) != None:
-            map = 'GolanHeights1'
-        elif pyautogui.locateOnScreen('assets/golan_heights2.png', grayscale=False, confidence=0.99) != None:
-            map = 'GolanHeights2'
-        elif pyautogui.locateOnScreen('assets/spain1.png', grayscale=False, confidence=0.99) != None:
-            map = 'Spain1'
-        elif pyautogui.locateOnScreen('assets/spain3.png', grayscale=False, confidence=0.99) != None:
-            map = 'Spain3'
-        elif pyautogui.locateOnScreen('assets/spain2.png', grayscale=False, confidence=0.97) != None:
-            map = 'Spain2'
-            screenshot_val = True
-        elif pyautogui.locateOnScreen('assets/sinai1.png', grayscale=False, confidence=0.98) != None:
-            map = 'Sinai1'
-        elif pyautogui.locateOnScreen('assets/sinai2.png', grayscale=False, confidence=0.98) != None:
-            map = 'Sinai2'
-        elif pyautogui.locateOnScreen('assets/city2.png', grayscale=False, confidence=0.97) != None:
-            map = 'City2'
-        elif pyautogui.locateOnScreen('assets/city1.png', grayscale=False, confidence=0.97) != None:
-            map = 'City1'
-        elif pyautogui.locateOnScreen('assets/rocky_canyon2.png', grayscale=False, confidence=0.97) != None:
-            map = 'RockyCanyon2'
+        elif pyautogui.locateOnScreen('assets/golan_heights.png', grayscale=False, confidence=0.99) != None:
+            map = 'GolanHeights'
+        elif pyautogui.locateOnScreen('assets/golan_heightsALT.png', grayscale=False, confidence=0.99) != None:
+            map = 'GolanHeightsALT'
+        elif pyautogui.locateOnScreen('assets/sinai.png', grayscale=False, confidence=0.98) != None:
+            map = 'Sinai'
+        elif pyautogui.locateOnScreen('assets/sinaiALT.png', grayscale=False, confidence=0.98) != None:
+            map = 'SinaiALT'
+        elif pyautogui.locateOnScreen('assets/city.png', grayscale=False, confidence=0.97) != None:
+            map = 'City'
+            city = True
+        elif pyautogui.locateOnScreen('assets/cityALT.png', grayscale=False, confidence=0.97) != None:
+            map = 'CityALT'
+            city = True
+        elif pyautogui.locateOnScreen('assets/rocky_canyonALT.png', grayscale=False, confidence=0.97) != None:
+            map = 'RockyCanyonALT'
+            ec = True
             screenshot_val = True
         elif pyautogui.locateOnScreen('assets/afghanistan.png', grayscale=False, confidence=0.97) != None:
-            map = 'RockyCanyon2'
+            ec = True
+            map = 'RockyCanyonALT'
         else:
             screenshot_val = True
         # Temp condition
         if screenshot_val == True: 
             screenshot_screen()
 
-
-    
-        if map == 'Spain2' or map == 'Vietnam2' or map == 'RockyCanyon2':
+        if ec == True:
             # temp until solution found
             press('esc')
             move_mouse_to(1274, 630)
@@ -490,13 +404,13 @@ def bot():
 
         # Take off/spawn procedure
         battle_time = time.time()
-        if map != 'City1' and map != 'City2' and map != 'Spain2' and map != 'Vietnam2' and map != 'RockyCanyon2':
+        if city == False and ec == False:
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn on Airfield')
             wait_on('assets/cancel_spawn.png')
             print('CONSOLE: Spawned in')
             # Throttle up, then pitch up
-            holdFor('w', 4)
+            holdFor(KEYBINDS['throttleUp'], 4)
             move_mouse_by(0, -pitch_value)
         
             # Start CCRP and choose base
@@ -518,7 +432,7 @@ def bot():
                     move_mouse_by(0, downVal + 5)
                     time.sleep(1)
         # Air Spawn
-        elif map != 'Spain2' and map != 'Vietnam2' and map != 'RockyCanyon2':
+        elif city == True and ec == False:
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn In Airspawn')
             wait_on('assets/cancel_spawn.png', 0.7)
@@ -537,15 +451,13 @@ def bot():
         zoom_time = 0
         zoom_flag = False
         brake_flag = False
-        if map == 'City1' or map == 'City2':
+        if city == True:
             pitch_flag = True
         else:
             pitch_flag = False
         mach_flag = False
         map_distance = DISTANCES[map]
         height = HEIGHTS[map]
-
-        
         
         # Hold down the bombing button
         hold(KEYBINDS['bomb'])
@@ -553,11 +465,11 @@ def bot():
         # Bombing loop
         while pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) == None:
             # Temp Condition
-            if screenshot_val == True and zoom_time == 6 and (map == 'RockyCanyon2' or map == 'Spain3'):
+            if screenshot_val == True and zoom_time == 6 and ec == True:
                 screenshot_screen()
-                hold('m')
+                hold(KEYBINDS['map'])
                 screenshot_screen()
-                release('m')
+                release(KEYBINDS['map'])
                 screenshot_val = False
 
             # Locate the CCRP line and move the mouse towards it
@@ -599,7 +511,7 @@ def bot():
 
             # Slowly pitch the plane back to level
             attitude = get_attitude()
-            if (map != 'City1' and map != 'City2') and pitch_flag == False and attitude[0] > height - 10:
+            if city == False and pitch_flag == False and attitude[0] > height - 10:
                 for i in range(2):
                     move_mouse_by(0, downVal + 5)
                     time.sleep(1)
@@ -632,15 +544,17 @@ def bot():
                 elif attitude[0] < height + 100 and attitude[0] > height and attitude[1] < -0.1:
                     move_mouse_by(0, -7)
             
-        #  After Bombing pitch up, throttle down, and bait enemies
+        # After Bombing pitch up, throttle down, and bait enemies
         time.sleep(1)
         if mach_flag == False:
             press(KEYBINDS['airbrake'])
         press(KEYBINDS['smoke'])
         move_mouse_by(0, -200)
         time.sleep(np.random.uniform(1.2,1.7))
-        holdFor('s', 0.3)
+        holdFor(KEYBINDS['throttleDown'], 0.3)
         time.sleep(np.random.uniform(1.2,1.7))
+
+        # Turn right until dead
         while pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) == None:
             move_mouse_by(random.randint(130,170), 0)
             elapsed_time = get_elapsed_time(battle_time)
