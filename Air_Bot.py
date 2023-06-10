@@ -223,11 +223,11 @@ def calculate_ec_base():
                 if -180 <= angle_degrees <= 180:
                     # Calculate the absolute difference between the current angle and 0
                     print(f'This base is {angle_degrees} degrees away')
-                    abs_difference = abs(angle_degrees)
-                    # Check if the absolute difference is less than the minimum angle found so far
-                    if abs_difference < min_angle:
-                        min_angle = abs_difference
+                    # Check if the absolute angle is less than the minimum angle found so far
+                    if abs(angle_degrees) < min_angle:
+                        min_angle = abs(angle_degrees)
                         min_index = index
+                index += 1
             print(f'Base Chosen')
             return points[min_index]
 
