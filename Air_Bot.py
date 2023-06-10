@@ -222,6 +222,7 @@ def calculate_ec_base():
                 # Check if the angle is within the desired range
                 if -180 <= angle_degrees <= 180:
                     # Calculate the absolute difference between the current angle and 0
+                    print(f'This base is {angle_degrees} degrees away')
                     abs_difference = abs(angle_degrees)
                     # Check if the absolute difference is less than the minimum angle found so far
                     if abs_difference < min_angle:
@@ -620,7 +621,7 @@ def bot():
             if zoom_time >= 6 and zoom_flag == False:
                 press(KEYBINDS['zoom'])
                 zoom_flag = True
-            elif zoom_time >= 13 and ec == True:
+            elif zoom_time == 13 and ec == True:
                 base_loc = calculate_ec_base()
             zoom_time += 1
             
@@ -726,6 +727,8 @@ def bot():
         # Match has ended
         else:
             print('CONSOLE: Match Ended, Returning to Hangar')
+            # Wait for 'To Hangar' Button
+            wait_for('assets/to_hangar.png', False, 0.75)
             # Click 'To Hangar' Button
             while pyautogui.locateCenterOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.75) != None:
                 move_mouse_to_image('assets/to_hangar.png')
