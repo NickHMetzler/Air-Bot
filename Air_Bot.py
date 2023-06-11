@@ -1,10 +1,10 @@
 # Naval_Bot.py
 # Plays War Thunder Naval to automatically generate Silver Lions (In Game Currency)
-# 2023-06-01
+# 2023-06-11
 # Nicolas Metzler
 
 # Import Statements
-import auto_py_to_exe
+from cryptography.fernet import Fernet
 from pyautogui import *
 import pyautogui
 import time
@@ -24,6 +24,7 @@ import datetime
 from PIL import Image
 import socket
 import mysql.connector
+from dotenv import load_dotenv
 
 # Allow the use of relative paths
 os.chdir(os.path.dirname(__file__))
@@ -40,7 +41,11 @@ pyautogui.FAILSAFE = False
 ###############################
 #          Constants          #
 ###############################
+# Load environment variables from .env file
+load_dotenv()
 
+# Get the decryption key from the environment variables
+decryption_key = os.getenv('decryption_key')
 # Char/Str to Scancode for Bot Game Inputs
 # https://kbdlayout.info/kbdusx/scancodes
 with open('data/keycodes.txt', 'r') as file:
@@ -50,21 +55,24 @@ with open('data/keycodes.txt', 'r') as file:
 # Evaluate the contents as Python code
 KEYS = eval(contents)
 
-# Cruising Altitude for each Map
-with open('data/heights.txt', 'r') as file:
-    # Read the contents of the file
-    contents = file.read()
+# Create a Fernet cipher object with the key
+cipher = Fernet(decryption_key)
+
+# Cruising Heights for each Map
+with open('data/heights_encrypted.txt', 'rb') as file:
+    encrypted_contents = file.read()
+    decrypted_contents = cipher.decrypt(encrypted_contents)
 
 # Evaluate the contents as Python code
-HEIGHTS = eval(contents)
+HEIGHTS = eval(decrypted_contents)
 
 # Bombing Distances for each Map
-with open('data/distances.txt', 'r') as file:
-    # Read the contents of the file
-    contents = file.read()
+with open('data/distances_encrypted.txt', 'rb') as file:
+    encrypted_contents = file.read()
+    decrypted_contents = cipher.decrypt(encrypted_contents)
 
 # Evaluate the contents as Python code
-DISTANCES = eval(contents)
+DISTANCES = eval(decrypted_contents)
 
 # Get User's KeyBinds from file
 with open('data/keybinds.txt', 'r') as file:
@@ -184,7 +192,8 @@ def get_elapsed_time(startTime):
 #######################
 
 def get_location_data():
-    url = 'http://localhost:8111/map_obj.json'
+    # Access the map_url variable
+    url = os.getenv('map_url')  
     response = requests.get(url)
     if response.status_code == 200:
         return json.loads(response.text)
@@ -278,9 +287,8 @@ def get_field_info():
 
 # Returns the current Height and Rate of Climb
 def get_attitude():
-    url = 'http://localhost:8111/state'
+    url = os.getenv('att_url')
     response = requests.get(url)
-
     if response.status_code == 200:
         json_data = json.loads(response.text)
         return_data = (json_data["H, m"], json_data["Vy, m/s"])
@@ -289,9 +297,8 @@ def get_attitude():
 
 # Returns the speed in Mach
 def get_mach():
-    url = 'http://localhost:8111/indicators'
+    url = os.getenv('indi_url')
     response = requests.get(url)
-
     if response.status_code == 200:
         json_data = json.loads(response.text)
         return_data = json_data["mach"]
@@ -685,7 +692,7 @@ def main():
 
 
     def check_key(key):
-        if key == "M":
+        if key == "K":
             return True
         # Get the user's IP address
         ip_address = get_ip_address()
