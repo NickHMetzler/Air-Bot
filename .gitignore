@@ -1,4 +1,6 @@
 tester.py
+Air-Bot.py
+.env
 assets/*
 data/*
 !assets/icons

@@ -1,5 +1,8 @@
 # War Thunder Air RB Bot
 
+   NOTICE: This project has moved to https://github.com/NickHMetzler/War-Thunder-Farming-Bot
+
+
    This is a Bot designed to play the Kfir Canard in War Thunder automatically. 
    It automatically plays the game and bombs bases to generate silver lions and research points. Please follow the instructions below to set up and use the bot effectively.
 
