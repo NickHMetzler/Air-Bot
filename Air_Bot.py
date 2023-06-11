@@ -253,8 +253,6 @@ def get_base_info(map, base, ec=False):
                 turn_angle = angle - facing_angle
                 angle_degrees = math.degrees(turn_angle)
                 distance = math.sqrt((x - base_loc[0])**2 + (y - base_loc[1])**2)
-                print(f'Base is heading: {angle_degrees}')
-                print(f'Base distance is: {distance}')
                 return angle_degrees, distance, base_loc
             else:
                 return 0.0, 2.0, [0, 0]
@@ -274,8 +272,6 @@ def get_field_info():
             turn_angle = angle - facing_angle
             angle_degrees = math.degrees(turn_angle)
             distance = math.sqrt((x - field_x)**2 + (y - field_y)**2)
-            print(f'Airfield is heading: {angle_degrees}')
-            print(f'Airfield distance is: {distance}')
             return angle_degrees, distance
             
 
@@ -285,12 +281,8 @@ def get_attitude():
     response = requests.get(url)
 
     if response.status_code == 200:
-        # Parse the JSON string
         json_data = json.loads(response.text)
-
-        # Access the value of "H, m"
         return_data = (json_data["H, m"], json_data["Vy, m/s"])
-        # print(f'Height is: {return_data[0]}m\nRate of Climb is: {return_data[1]}')
         return return_data
 
 
@@ -300,12 +292,8 @@ def get_mach():
     response = requests.get(url)
 
     if response.status_code == 200:
-        # Parse the JSON string
         json_data = json.loads(response.text)
-
-        # Access the value of "H, m"
         return_data = json_data["mach"]
-        #print(f'Plane is at Mach {return_data}')
         return return_data
 
 #########################
@@ -403,7 +391,7 @@ def bot():
             if pyautogui.locateOnScreen('assets/repaired.png', grayscale=False, confidence=0.95) != None:
                 press(KEYBINDS['enter'])
             time.sleep(0.5)
-        print("CONSOLE: To Battle!")
+        print("\n\nCONSOLE: To Battle!")
 
         # Wait to Join Battle
         print('CONSOLE: Waiting in Qeue...')
@@ -458,7 +446,7 @@ def bot():
             map = 'RockyCanyonALT'
             screenshot_val = True
         # Temp condition
-        if screenshot_val == True: 
+        if screenshot_val: 
             screenshot_screen()
 
         
@@ -476,7 +464,7 @@ def bot():
 
         # Take off/spawn procedure
         battle_time = time.time()
-        if city == False:
+        if not city:
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn on Airfield')
             wait_on('assets/cancel_spawn.png')
@@ -508,7 +496,7 @@ def bot():
                     move_mouse_by(0, downVal + 5)
                     time.sleep(1)
         # Air Spawn
-        elif city == True:
+        elif city:
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn In Airspawn')
             wait_on('assets/cancel_spawn.png', 0.7)
@@ -528,7 +516,7 @@ def bot():
         base_loc = [0, 0]
         zoom_flag = False
         brake_flag = False
-        if city == True:
+        if city:
             pitch_flag = True
         else:
             pitch_flag = False
@@ -542,7 +530,7 @@ def bot():
         # Bombing loop
         while pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) == None:
             # Temp Condition
-            if screenshot_val == True and zoom_time == 6 and ec == True:
+            if screenshot_val and zoom_time == 6 and ec:
                 screenshot_screen()
                 hold(KEYBINDS['map'])
                 screenshot_screen()
@@ -550,8 +538,6 @@ def bot():
                 screenshot_val = False
 
             base_info = get_base_info(map, base_loc)
-            print(f'After base info, the base_loc is at {base_info[2]}')
-
             centreline_location = pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7)
             if centreline_location:
                 center_x, center_y = pyautogui.center(centreline_location)
@@ -573,7 +559,6 @@ def bot():
                 zoom_flag = True
             elif zoom_time == 10 and ec:
                 base_loc = calculate_ec_base()
-                print(f'After EC BASE info, the base is at {base_loc}')
             zoom_time += 1
 
             if brake_flag:
@@ -602,7 +587,6 @@ def bot():
                     press(KEYBINDS['airbrake'])
                     pyautogui.scroll(-2)
                     brake_flag = True
-            print(f'DOES THIS MATCH??? : {base_loc}')
 
             if pitch_flag and not brake_flag:
                 pitch_control(height, attitude[0], attitude[1])
@@ -610,7 +594,7 @@ def bot():
         # After Bombing pitch up, throttle down, and bait enemies
         time.sleep(1)
         cruising_height = height + 1000
-        if mach_flag == False:
+        if not mach_flag:
             press(KEYBINDS['airbrake'])
         brake_flag = False
         press(KEYBINDS['smoke'])
@@ -618,11 +602,11 @@ def bot():
         while pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) == None:
             attitude = get_attitude()
             field_data = get_field_info()
-            if brake_flag == False:
+            if not brake_flag:
                 pitch_control(cruising_height, attitude[0], attitude[1])
             if field_data is not None:
                 move_mouse_by(int(field_data[0] * 10), 0)
-                if field_data[1] <= 0.065 and brake_flag == False:
+                if field_data[1] <= 0.065 and not brake_flag:
                     press(KEYBINDS['airbrake'])
                     if cruising_height >= 2000:
                         move_mouse_by(0, int(cruising_height/12))
@@ -763,7 +747,7 @@ def main():
         key = key_var.get()
         if checkbox_var.get() and check_key(key):
             # Prompt the user to Alt + Tab to War Thunder
-            messagebox.showinfo("Alt + Tab", "Please Alt + Tab to War Thunder")
+            messagebox.showinfo("Alert", "Please Alt + Tab to War Thunder")
 
             # Allow time for user to Alt + Tab
             time.sleep(5)
@@ -794,13 +778,13 @@ def main():
 
                     # Format the time as HH:MM:SS
                     formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-
-                    # Print the formatted time
                     print(f'Bot was running for: {formatted_time}')
                     end_program()
-        else:
+        elif not checkbox_var.get():
             # Checkbox is not checked, show an error message
-            print("Please agree to use responsibly.")
+            messagebox.showinfo("Error", "Please agree to use responsibly.")
+        else:
+            messagebox.showinfo("Error", "Incorrect Key")
 
 
     root.geometry("800x600")
