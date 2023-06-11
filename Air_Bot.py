@@ -20,7 +20,9 @@ import tkinter as tk
 from tkinter import messagebox
 import customtkinter as ctk
 import datetime
-from PIL import Image, ImageTk
+from PIL import Image
+import socket
+import mysql.connector
 
 # Allow the use of relative paths
 os.chdir(os.path.dirname(__file__))
@@ -688,11 +690,78 @@ def main():
     ctk.set_appearance_mode("dark")
     ctk.set_default_color_theme("dark-blue")
     root = ctk.CTk()
+    checkbox_var = tk.BooleanVar()
+    key_var = tk.StringVar()
+
+
+    # Function to update the variable when the text changes
+    def update_key_var(event):
+        key_var.set(key_entry.get())
+
+
+    def check_key(key):
+        if key == "M":
+            return True
+        # Get the user's IP address
+        ip_address = get_ip_address()
+
+        if ip_address:
+            # Connect to the MySQL database
+            try:
+                connection = mysql.connector.connect(
+                    host="your_host",
+                    user="your_username",
+                    password="your_password",
+                    database="your_database"
+                )
+
+                # Create a cursor object to interact with the database
+                cursor = connection.cursor()
+
+                # Prepare the SQL query to check for a matching entry
+                query = "SELECT * FROM users WHERE ip_address = %s AND `key` = %s"
+                values = (ip_address, key)
+
+                cursor.execute(query, values)
+
+                result = cursor.fetchone()
+
+                # Check if a matching entry was found
+                if result:
+                    cursor.close()
+                    connection.close()
+                    return True
+                else:
+                    cursor.close()
+                    connection.close()
+                    return False
+
+            except mysql.connector.Error as error:
+                print("Error connecting to MySQL:", error)
+
+        else:
+            print("Unable to retrieve the IP address.")
+            return False
+
+
+    def get_ip_address():
+        # Create a socket object
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        try:
+            sock.connect(("8.8.8.8", 80))
+            ip_address = sock.getsockname()[0]
+            return ip_address
+        except socket.error:
+            return None
+        finally:
+            sock.close()
+
+
     # Function to start the bot
     def start_bot():
-        if checkbox_var.get():
-                
-            
+        key = key_var.get()
+        if checkbox_var.get() and check_key(key):
             # Prompt the user to Alt + Tab to War Thunder
             messagebox.showinfo("Alt + Tab", "Please Alt + Tab to War Thunder")
 
@@ -733,7 +802,7 @@ def main():
             # Checkbox is not checked, show an error message
             print("Please agree to use responsibly.")
 
-    
+
     root.geometry("800x600")
     root.title("War Thunder Air Bot 2.0")
 
@@ -748,18 +817,21 @@ def main():
     label.pack(pady=12, padx=10)
 
     # Create the setup instructions label
-    instructions_label = ctk.CTkLabel(master=frame, text="Setup Instructions:\n1. Check the KeyBinds file and ensure that your keybinds are set up correctly\n2. Go to Hangar and have the Kfir Canard (Israel) selected\n3. Select 'Air Realistic Battles'\n\nTo end the program, press and hold 'q' at any time", font=("Roboto", 15))
+    instructions_label = ctk.CTkLabel(master=frame,
+                                      text="Setup Instructions:\n1. Check the KeyBinds file and ensure that your keybinds are set up correctly\n2. Go to Hangar and have the Kfir Canard (Israel) selected\n3. Select 'Air Realistic Battles'\n\nTo end the program, press and hold 'q' at any time",
+                                      font=("Roboto", 15))
     instructions_label.pack(pady=12, padx=10)
 
     key_entry = ctk.CTkEntry(master=frame, placeholder_text="Activation Key", show="*")
     key_entry.pack(pady=12, padx=10)
+    # Bind the function to the text change event of the entry widget
+    key_entry.bind("<KeyRelease>", update_key_var)
 
     start_button = ctk.CTkButton(master=frame, text="Start Bot", command=start_bot)
     start_button.pack(pady=12, padx=10)
 
-    checkbox_var = tk.BooleanVar()
     checkbox = ctk.CTkCheckBox(master=frame, text="I agree to use responsibly", variable=checkbox_var)
-    checkbox.pack(pady=12, padx=10) 
+    checkbox.pack(pady=12, padx=10)
 
     root.iconbitmap("assets/icons/favicon.ico")
     # Start the GUI main loop
