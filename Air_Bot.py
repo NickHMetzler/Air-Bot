@@ -11,7 +11,6 @@ import keyboard
 import numpy as np
 import win32api, win32con
 import ctypes
-import random
 import os
 import threading
 import requests
@@ -19,7 +18,9 @@ import json
 import math
 import tkinter as tk
 from tkinter import messagebox
+import customtkinter as ctk
 import datetime
+from PIL import Image, ImageTk
 
 # Allow the use of relative paths
 os.chdir(os.path.dirname(__file__))
@@ -683,73 +684,86 @@ def bot():
 
 # Main function
 def main():
+    # Create the main window
+    ctk.set_appearance_mode("dark")
+    ctk.set_default_color_theme("dark-blue")
+    root = ctk.CTk()
     # Function to start the bot
     def start_bot():
-        # Prompt the user to Alt + Tab to War Thunder
-        messagebox.showinfo("Alt + Tab", "Please Alt + Tab to War Thunder")
+        if checkbox_var.get():
+                
+            
+            # Prompt the user to Alt + Tab to War Thunder
+            messagebox.showinfo("Alt + Tab", "Please Alt + Tab to War Thunder")
 
-        # Allow time for user to Alt + Tab
-        time.sleep(5)
+            # Allow time for user to Alt + Tab
+            time.sleep(5)
 
-        # Create a thread for the bot
-        bot_thread = threading.Thread(target=bot)
+            # Create a thread for the bot
+            bot_thread = threading.Thread(target=bot)
 
-        # Start the bot
-        bot_thread.start()
+            # Start the bot
+            bot_thread.start()
 
-        launch_time = time.time()
+            launch_time = time.time()
 
-        # Check if the user presses key 'q' then quit the program
-        while True:
-            if keyboard.is_pressed('q'):
-                # handle the 'q' key press
-                print("CONSOLE: Exiting program")
-                # Quit the program
-                time.sleep(1)
-                elapsed_time = get_elapsed_time(launch_time)
-                # Convert the elapsed time into a timedelta object
-                time_delta = datetime.timedelta(seconds=elapsed_time)
+            # Check if the user presses key 'q' then quit the program
+            while True:
+                if keyboard.is_pressed('q'):
+                    # handle the 'q' key press
+                    print("CONSOLE: Exiting program")
+                    # Quit the program
+                    time.sleep(1)
+                    elapsed_time = get_elapsed_time(launch_time)
+                    # Convert the elapsed time into a timedelta object
+                    time_delta = datetime.timedelta(seconds=elapsed_time)
 
-                # Get the hours, minutes, and seconds from the timedelta object
-                hours = time_delta.seconds // 3600
-                minutes = (time_delta.seconds % 3600) // 60
-                seconds = time_delta.seconds % 60
+                    # Get the hours, minutes, and seconds from the timedelta object
+                    hours = time_delta.seconds // 3600
+                    minutes = (time_delta.seconds % 3600) // 60
+                    seconds = time_delta.seconds % 60
 
-                # Format the time as HH:MM:SS
-                formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+                    # Format the time as HH:MM:SS
+                    formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
-                # Print the formatted time
-                print(f'Bot was running for: {formatted_time}')
-                end_program()
+                    # Print the formatted time
+                    print(f'Bot was running for: {formatted_time}')
+                    end_program()
+        else:
+            # Checkbox is not checked, show an error message
+            print("Please agree to use responsibly.")
 
-    # Create the main window
-    window = tk.Tk()
-    window.title("Nicks War Thunder Air Bot 1.6")
-    window.geometry("800x500")
-    window.configure(bg="#333333")
+    
+    root.geometry("800x600")
+    root.title("War Thunder Air Bot 2.0")
 
-    # Load the image
-    image_path = "assets/icons/icon.png"
-    image = tk.PhotoImage(file=image_path)
+    frame = ctk.CTkFrame(master=root)
+    frame.pack(pady=20, padx=60, fill="both", expand=True)
 
-    # Create a label widget for the image
-    image_label = tk.Label(window, image=image, bg="#333333")
-    image_label.pack(pady=20)
+    logo = ctk.CTkImage(Image.open("assets/icons/icon.png"), size=[164, 139])
+    logo_label = ctk.CTkLabel(frame, text="", image=logo)
+    logo_label.pack(pady=12, padx=10)
 
-    # Create the title label
-    title_label = tk.Label(window, text="Welcome to Nicks War Thunder Air Bot 1.6", font=("Arial", 20), bg="#333333", fg="#ffffff")
-    title_label.pack(pady=10)
+    label = ctk.CTkLabel(master=frame, text="Nicks War Thunder Air Bot 2.0", font=("Roboto", 24))
+    label.pack(pady=12, padx=10)
 
     # Create the setup instructions label
-    instructions_label = tk.Label(window, text="Setup Instructions:\n1. Check the KeyBinds file and ensure that your keybinds are set up correctly\n2. Go to Hangar and have the Kfir Canard (Israel) selected\n3. Select 'Air Realistic Battles'\n\nTo end the program, press and hold 'q' at any time", font=("Arial", 16), bg="#333333", fg="#ffffff")
-    instructions_label.pack(pady=7)
+    instructions_label = ctk.CTkLabel(master=frame, text="Setup Instructions:\n1. Check the KeyBinds file and ensure that your keybinds are set up correctly\n2. Go to Hangar and have the Kfir Canard (Israel) selected\n3. Select 'Air Realistic Battles'\n\nTo end the program, press and hold 'q' at any time", font=("Roboto", 15))
+    instructions_label.pack(pady=12, padx=10)
 
-    # Create the Start Bot button
-    start_button = tk.Button(window, text="Start Bot", font=("Arial", 16), command=start_bot)
-    start_button.pack(pady=10)
+    key_entry = ctk.CTkEntry(master=frame, placeholder_text="Activation Key", show="*")
+    key_entry.pack(pady=12, padx=10)
 
+    start_button = ctk.CTkButton(master=frame, text="Start Bot", command=start_bot)
+    start_button.pack(pady=12, padx=10)
+
+    checkbox_var = tk.BooleanVar()
+    checkbox = ctk.CTkCheckBox(master=frame, text="I agree to use responsibly", variable=checkbox_var)
+    checkbox.pack(pady=12, padx=10) 
+
+    root.iconbitmap("assets/icons/favicon.ico")
     # Start the GUI main loop
-    window.mainloop()
+    root.mainloop()
 
 
 # Start the main thread
