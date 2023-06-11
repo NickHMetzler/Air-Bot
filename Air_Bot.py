@@ -179,145 +179,96 @@ def get_elapsed_time(startTime):
 #   Query Functions   #
 #######################
 
-def calculate_ec_base():
+def get_location_data():
     url = 'http://localhost:8111/map_obj.json'
     response = requests.get(url)
-    
     if response.status_code == 200:
-        json_data = json.loads(response.text)
-        # Extract x and y values where icon is "Player"
+        return json.loads(response.text)
+    return None
+
+def calculate_ec_base():
+    json_data = get_location_data()
+    points = []
+    if json_data:
         player = next((obj for obj in json_data if obj["icon"] == "Player"), None)
-        
         if player:
-            x = player["x"]
-            y = player["y"]
-            dx = player["dx"]
-            dy = player["dy"]
+            x, y, dx, dy = player["x"], player["y"], player["dx"], player["dy"]
         else:
-            # Handle the case when player is None
-            x = 0  # Set default x coordinate
-            y = 0  # Set default y coordinate
-            dx = 0  # Set default x velocity
-            dy = 0  # Set default y velocity
-        
-        points = []
+            x = y = dx = dy = 0
         for obj in json_data:
             if obj["type"] == "bombing_point":
-                point_loc = (obj["x"], obj["y"])
-                points.append(point_loc)
+                point_x, point_y = obj["x"], obj["y"]
+                points.append((point_x, point_y))
+        index = 0
+        min_index = 0
+        min_angle = 180.0
+        for point in points:
+            angle = math.atan2(point[1] - y, point[0] - x)
+            facing_angle = math.atan2(dy, dx)
+            turn_angle = angle - facing_angle
+            angle_degrees = math.degrees(turn_angle)
 
-        if x is not None:
-            min_index = 0
-            min_angle = 180.0
-            index = 0
-            for point in points:
-                angle = math.atan2(point[1] - y, point[0] - x)
-                # Calculate the plane's facing angle
-                facing_angle = math.atan2(dy, dx)
-                # Calculate the angle to turn towards the airfield
-                turn_angle = angle - facing_angle
-                # Convert the angle from radians to degrees
-                angle_degrees = math.degrees(turn_angle)
+            if -180 <= angle_degrees <= 180 and abs(angle_degrees) < min_angle:
+                min_angle = abs(angle_degrees)
+                min_index = index
 
-                # Check if the angle is within the desired range
-                if -180 <= angle_degrees <= 180:
-                    # Calculate the absolute difference between the current angle and 0
-                    print(f'This base is {angle_degrees} degrees away')
-                    # Check if the absolute angle is less than the minimum angle found so far
-                    if abs(angle_degrees) < min_angle:
-                        min_angle = abs(angle_degrees)
-                        min_index = index
-                index += 1
-            print(f'Base Chosen')
-            return points[min_index]
+            index += 1
+
+        return points[min_index]
+
 
 # Returns the angle toward the enemy airfield
 def get_base_info(map, base, ec=False):
-    url = 'http://localhost:8111/map_obj.json'  
-    response = requests.get(url)
+    json_data = get_location_data()
     base_loc = base
-    if response.status_code == 200:
-        json_data = json.loads(response.text)
-        # Extract x and y values where icon is "Player"
+    points = []
+    if json_data:
         player = next((obj for obj in json_data if obj["icon"] == "Player"), None)
         if player:
-            x = player["x"]
-            y = player["y"]
-            dx = player["dx"]
-            dy = player["dy"]
+            x, y, dx, dy = player["x"], player["y"], player["dx"], player["dy"]
         else:
-            # Handle the case when player is None
-            x = 0  # Set default x coordinate
-            y = 0  # Set default y coordinate
-            dx = 0  # Set default x velocity
-            dy = 0  # Set default y velocity
-        points = []
+            x = y = dx = dy = 0  # Set default values
         for obj in json_data:
             if obj["type"] == "bombing_point":
                 points.append(obj["x"])
         points_sorted = sorted(set(points))
         if x is not None:
-            if base_loc == []:
-            # Pick the index based on map
-                if map == 'CityALT':
-                    index = 2
-                elif map == 'GolanHeightsALT' or map == 'SpainALT' or map == 'SinaiALT' or map == 'VietnamALT':
+            if base_loc == [0, 0]:
+                if map in ['GolanHeightsALT', 'SpainALT', 'SinaiALT', 'VietnamALT']:
                     index = 3
                 else:
                     index = 1
                 if index < len(points_sorted):
-                    chosen_point = points_sorted[index] 
-                    point_x = None
-                    point_y = None
+                    chosen_point = points_sorted[index]
                     for obj in json_data:
                         if obj["type"] == "bombing_point" and obj["x"] == chosen_point:
-                            point_x = obj["x"]
-                            point_y = obj["y"]
+                            point_x, point_y = obj["x"], obj["y"]
                             base_loc = (point_x, point_y)
-            
-            angle = math.atan2(base_loc[1] - y, base_loc[0] - x)
-
-            # Calculate the plane's facing angle
-            facing_angle = math.atan2(dy, dx)
-
-            # Calculate the angle to turn towards the airfield
-            turn_angle = angle - facing_angle
-
-            # Convert the angle from radians to degrees
-            angle_degrees = math.degrees(turn_angle)
-            distance = math.sqrt((x - base_loc[0])**2 + (y - base_loc[1])**2)
-            print(f'Base is heading: {angle_degrees}')
-            print(f'Base distance is: {distance}')
-            return angle_degrees, distance, base_loc
+            if base_loc != [0, 0]:
+                angle = math.atan2(base_loc[1] - y, base_loc[0] - x)
+                facing_angle = math.atan2(dy, dx)
+                turn_angle = angle - facing_angle
+                angle_degrees = math.degrees(turn_angle)
+                distance = math.sqrt((x - base_loc[0])**2 + (y - base_loc[1])**2)
+                print(f'Base is heading: {angle_degrees}')
+                print(f'Base distance is: {distance}')
+                return angle_degrees, distance, base_loc
+            else:
+                return 0.0, 2.0, [0, 0]
          
         
 def get_field_info():
-    url = 'http://localhost:8111/map_obj.json'  
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        json_data = json.loads(response.text)
-        # Extract x and y values where icon is "Player"
+    json_data = get_location_data()
+    if json_data:
         player = next((obj for obj in json_data if obj["icon"] == "Player"), None)
         field = next((obj for obj in json_data if obj["type"] == "airfield" and obj["color"] == "#fa0C00"), None)
         if player and field:
-            x = player["x"]
-            y = player["y"]
-            dx = player["dx"]
-            dy = player["dy"]
-            field_x = (field["sx"] + field["ex"])/2
-            field_y = (field["sy"] + field["ey"])/2
-            
-            # Calculate the angle between the current direction and the target location
+            x, y, dx, dy = player["x"], player["y"], player["dx"], player["dy"]
+            field_x = (field["sx"] + field["ex"]) / 2
+            field_y = (field["sy"] + field["ey"]) / 2
             angle = math.atan2(field_y - y, field_x - x)
-
-            # Calculate the plane's facing angle
             facing_angle = math.atan2(dy, dx)
-
-            # Calculate the angle to turn towards the airfield
             turn_angle = angle - facing_angle
-
-            # Convert the angle from radians to degrees
             angle_degrees = math.degrees(turn_angle)
             distance = math.sqrt((x - field_x)**2 + (y - field_y)**2)
             print(f'Airfield is heading: {angle_degrees}')
@@ -358,28 +309,25 @@ def get_mach():
 #   Control Functions   #
 #########################
 
-# Controls the pitch/attitude of the plane
 def pitch_control(target_height, curr_height, attitude):
-    if curr_height > target_height + 100 and attitude > 20.0:
+    height_diff = curr_height - target_height
+    if height_diff > 100 and attitude > 20.0:
         move_mouse_by(0, 60)
-    elif curr_height < target_height and attitude < -20.0:
+    elif height_diff < 0 and attitude < -20.0:
         move_mouse_by(0, -60)
-    elif curr_height > target_height + 100 and attitude > 10.0:
+    elif height_diff > 100 and attitude > 10.0:
         move_mouse_by(0, 30)
-    elif curr_height < target_height and attitude < -10.0:
+    elif height_diff < 0 and attitude < -10.0:
         move_mouse_by(0, -30)
-    elif curr_height > target_height + 100 and attitude > 5.0:
+    elif height_diff > 100 and attitude > 5.0:
         move_mouse_by(0, 20)
-    elif curr_height < target_height and attitude < -5.0:
+    elif height_diff < 0 and attitude < -5.0:
         move_mouse_by(0, -20)
-    elif curr_height > target_height + 25 and attitude > 0.0:
+    elif height_diff > 25 and attitude > 0.0:
         move_mouse_by(0, 7)
-    elif curr_height < target_height and attitude < 0.0:
+    elif height_diff < 0 and 0.1 < attitude < target_height:
         move_mouse_by(0, -7)
-    elif curr_height < target_height + 25 and attitude > target_height and attitude > 0.1:
-        move_mouse_by(0, 7)
-    elif curr_height < target_height + 25 and attitude > target_height and attitude < -0.1:
-        move_mouse_by(0, -7)
+
 
 # Click mouse
 def click_mouse():
@@ -477,7 +425,7 @@ def bot():
             map = 'Spain'
         elif pyautogui.locateOnScreen('assets/spainALT.png', grayscale=False, confidence=0.99) != None:
             map = 'SpainALT'
-        elif pyautogui.locateOnScreen('assets/spainEC.png', grayscale=False, confidence=0.97) != None:
+        elif pyautogui.locateOnScreen('assets/spainEC.png', grayscale=False, confidence=0.96) != None:
             map = 'SpainEC'
             ec = True
             screenshot_val = True
@@ -503,6 +451,8 @@ def bot():
             ec = True
             map = 'RockyCanyonALT'
         else:
+            ec = True
+            map = 'RockyCanyonALT'
             screenshot_val = True
         # Temp condition
         if screenshot_val == True: 
@@ -572,7 +522,7 @@ def bot():
         # Set variables for game loop
         battle_time = time.time()
         zoom_time = 0
-        base_loc = []
+        base_loc = [0, 0]
         zoom_flag = False
         brake_flag = False
         if city == True:
@@ -596,91 +546,86 @@ def bot():
                 release(KEYBINDS['map'])
                 screenshot_val = False
 
-            # Locate the CCRP line and move the mouse towards it
             base_info = get_base_info(map, base_loc)
-            location = pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7)
-            if location is not None:
-                center_x, center_y= pyautogui.center(location)
+            print(f'After base info, the base_loc is at {base_info[2]}')
+
+            centreline_location = pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7)
+            if centreline_location:
+                center_x, center_y = pyautogui.center(centreline_location)
                 
-                # Get the screen's center coordinates
                 screen_width, screen_height = pyautogui.size()
                 screen_center_x = screen_width // 2
                 
-                # Calculate the distance between the target center and the screen's center
-                distance_x = int((center_x - screen_center_x)/2)
+                distance_x = int((center_x - screen_center_x) / 2)
                 move_mouse_by(distance_x, 0)
-            elif brake_flag == True and base_info[1] > last_dist:
-                # Release the bombing button
+            elif brake_flag and base_info[1] > last_dist:
                 release(KEYBINDS['bomb'])
                 break
-            elif base_info is not None and pitch_flag == True:
+            elif base_info and pitch_flag:
                 move_mouse_by(int(base_info[0] * 10), 0)
             last_dist = base_info[1]
 
-            # Wait 6 cycles before zooming in
-            if zoom_time >= 6 and zoom_flag == False:
+            if zoom_time >= 6 and not zoom_flag:
                 press(KEYBINDS['zoom'])
                 zoom_flag = True
-            elif zoom_time == 13 and ec == True:
+            elif zoom_time == 10 and ec:
                 base_loc = calculate_ec_base()
+                print(f'After EC BASE info, the base is at {base_loc}')
             zoom_time += 1
-            
-            # Release flares while subsonic
-            if brake_flag == True:
+
+            if brake_flag:
                 print('CONSOLE: Popping Flares')
                 pyautogui.scroll(-2)
                 pyautogui.scroll(2)
-                
-            # Check if the airbrake can be deactivated
-            if brake_flag == True and mach_flag == False:
+
+            if brake_flag and not mach_flag:
                 mach = get_mach()
                 if mach < 1.0:
                     print('CONSOLE: Retracting Airbrake')
                     press(KEYBINDS['airbrake'])
                     mach_flag = True
 
-            # Slowly pitch the plane back to level
             attitude = get_attitude()
-            if city == False and pitch_flag == False and attitude[0] > height - 10:
-                for i in range(2):
-                    move_mouse_by(0, downVal + 5)
-                    time.sleep(1)
+            if not city and not pitch_flag and attitude[0] > height - 10:
+                move_mouse_by(0, downVal + 5)
+                move_mouse_by(0, downVal + 5)
+                time.sleep(1)
                 pitch_flag = True
 
-            # Hit the airbrake and turn off afterburner when close to the base
-            if base_info is not None:
+            if base_info and zoom_time != 11:
                 base_loc = base_info[2]
-                if brake_flag == False and base_info[1] <= map_distance:
+                if not brake_flag and base_info[1] <= map_distance:
                     print('CONSOLE: Deploying Airbrake')
                     press(KEYBINDS['airbrake'])
-                    pyautogui.scroll(-2) 
+                    pyautogui.scroll(-2)
                     brake_flag = True
+            print(f'DOES THIS MATCH??? : {base_loc}')
 
-            # Maintain level flight
-            if pitch_flag == True and brake_flag == False:
+            if pitch_flag and not brake_flag:
                 pitch_control(height, attitude[0], attitude[1])
             
         # After Bombing pitch up, throttle down, and bait enemies
         time.sleep(1)
+        cruising_height = height + 1000
         if mach_flag == False:
             press(KEYBINDS['airbrake'])
         brake_flag = False
         press(KEYBINDS['smoke'])
-        time.sleep(np.random.uniform(1.2,1.7))
-
         # Turn right until dead
         while pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) == None:
             attitude = get_attitude()
-            pitch_control(height + 1000, attitude[0], attitude[1])
             field_data = get_field_info()
+            if brake_flag == False:
+                pitch_control(cruising_height, attitude[0], attitude[1])
             if field_data is not None:
                 move_mouse_by(int(field_data[0] * 10), 0)
-                if field_data[1] <= 0.07 and brake_flag == False:
+                if field_data[1] <= 0.065 and brake_flag == False:
                     press(KEYBINDS['airbrake'])
-                    move_mouse_by(0, 200)
+                    if cruising_height >= 2000:
+                        move_mouse_by(0, int(cruising_height/12))
                     brake_flag = True
-            elapsed_time = get_elapsed_time(battle_time)
             # J out if 10 minutes have passed
+            elapsed_time = get_elapsed_time(battle_time)
             if elapsed_time >= 600:
                 holdFor('j', 4)
 
@@ -695,7 +640,7 @@ def bot():
                 move_mouse_to_image('assets/return_to_hangar.png')
                 click_mouse()
                 move_mouse_to(100, 100)
-                time.sleep(2)
+                time.sleep(3)
             
             # Wait for 'To Hangar' Button
             wait_for('assets/to_hangar.png', False, 0.75)
@@ -704,7 +649,7 @@ def bot():
                 move_mouse_to_image('assets/to_hangar.png')
                 click_mouse()
                 move_mouse_to(100, 100)
-                time.sleep(2)
+                time.sleep(3)
                 
             
         elif pyautogui.locateCenterOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.75) != None:
@@ -713,7 +658,7 @@ def bot():
                 move_mouse_to_image('assets/return_to_hangar.png')
                 click_mouse()
                 move_mouse_to(100, 100)
-                time.sleep(2)
+                time.sleep(3)
 
             # Wait for 'To Hangar' Button
             wait_for('assets/to_hangar.png', False, 0.75)
@@ -722,7 +667,7 @@ def bot():
                 move_mouse_to_image('assets/to_hangar.png')
                 click_mouse()
                 move_mouse_to(100, 100)
-                time.sleep(2)
+                time.sleep(3)
 
         # Match has ended
         else:
@@ -734,7 +679,7 @@ def bot():
                 move_mouse_to_image('assets/to_hangar.png')
                 click_mouse()
                 move_mouse_to(100, 100)
-                time.sleep(2)
+                time.sleep(3)
 
 # Main function
 def main():
