@@ -25,6 +25,9 @@ from PIL import Image
 import socket
 import mysql.connector
 from dotenv import load_dotenv
+import tempfile
+import os
+import shutil
 
 # Allow the use of relative paths
 os.chdir(os.path.dirname(__file__))
@@ -36,7 +39,7 @@ for file in os.listdir(script_folder):
 
 # PyAutoGui Failsafe off
 pyautogui.FAILSAFE = False
-
+temp_dir = None
 
 ###############################
 #          Constants          #
@@ -82,6 +85,65 @@ with open('data/keybinds.txt', 'r') as file:
 # Evaluate the contents as Python code
 KEYBINDS = eval(contents)
 
+
+from cryptography.fernet import Fernet
+from PIL import Image
+import io
+
+def decrypt_bin_file(bin_file):
+    # Read the binary file
+    with open(bin_file, 'rb') as f:
+        encrypted_data = f.read()
+
+    # Decrypt the binary data
+    decryption_key = b'eXqe4xrjdstZTKe3nNNGP8ie8WMqhBZehXev8M1_OEQ='
+    cipher = Fernet(decryption_key)
+    decrypted_data = cipher.decrypt(encrypted_data)
+
+    return decrypted_data
+
+def convert_to_png(data):
+    # Create a PIL Image object from the decrypted data
+    image = Image.open(io.BytesIO(data))
+
+    # Convert the image to PNG format
+    png_data = io.BytesIO()
+    image.save(png_data, format='PNG')
+    png_data.seek(0)
+
+    return png_data.read()
+
+def process_bin_folder(bin_folder):
+    temp_dir = r"assets\temp"
+
+    try:
+        # Iterate over the binary files in the folder
+        for filename in os.listdir(bin_folder):
+            if filename.endswith('.bin'):
+                bin_file = os.path.join(bin_folder, filename)
+
+                # Decrypt the binary file and convert it to PNG
+                # Replace this code with your actual decryption and conversion logic
+                decrypted_data = decrypt_bin_file(bin_file)
+                png_data = convert_to_png(decrypted_data)
+
+                # Create a temporary PNG file with the same name as the bin file
+                temp_filename = os.path.join(temp_dir, os.path.splitext(filename)[0] + '.png')
+
+                # Write the PNG data to the temporary file
+                with open(temp_filename, 'wb') as f:
+                    f.write(png_data)
+
+                # Use the temporary PNG file as needed
+                # For example, you can display it, process it, etc.
+
+                # Print the temporary file path
+                print("Temporary PNG file:", temp_filename)
+
+    finally:
+        return
+
+process_bin_folder("assets/bin")
 ###############################
 #   C Struct Redefinitions    #
 ###############################
@@ -392,18 +454,18 @@ def end_program():
 def bot():
     while True:
         # Click 'To Battle' Button in Main Menu
-        while pyautogui.locateOnScreen('assets/in_queue.png', grayscale=False, confidence=0.75) == None:
+        while pyautogui.locateOnScreen('assets/temp/in_queue.png', grayscale=False, confidence=0.75) == None:
             # Do not click if the vehicle needs to be repaired
-            if pyautogui.locateOnScreen('assets/trophy.png', grayscale=False, confidence=0.95) != None:
+            if pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95) != None:
                 press(KEYBINDS['enter'])
-            if pyautogui.locateOnScreen('assets/repaired.png', grayscale=False, confidence=0.95) != None:
+            if pyautogui.locateOnScreen('assets/temp/repaired.png', grayscale=False, confidence=0.95) != None:
                 press(KEYBINDS['enter'])
             time.sleep(0.5)
         print("\n\nCONSOLE: To Battle!")
 
         # Wait to Join Battle
         print('CONSOLE: Waiting in Qeue...')
-        wait_for('assets/spawn.png', grayscale=False, confidence=0.8)
+        wait_for('assets/temp/spawn.png', grayscale=False, confidence=0.8)
         
         # Check which map match is taking place on
         move_mouse_to(100, 100)
@@ -411,42 +473,42 @@ def bot():
         screenshot_val = False
         city = False
         ec = False
-        if pyautogui.locateOnScreen('assets/vietnam.png', grayscale=False, confidence=0.97) != None:
+        if pyautogui.locateOnScreen('assets/temp/vietnam.png', grayscale=False, confidence=0.97) != None:
             map = 'Vietnam'
             screenshot_val = True
-        elif pyautogui.locateOnScreen('assets/vietnamALT.png', grayscale=False, confidence=0.96) != None:
+        elif pyautogui.locateOnScreen('assets/temp/vietnamALT.png', grayscale=False, confidence=0.96) != None:
             map = 'VietnamALT'
-        elif pyautogui.locateOnScreen('assets/vietnamEC.png', grayscale=False, confidence=0.97) != None:
+        elif pyautogui.locateOnScreen('assets/temp/vietnamEC.png', grayscale=False, confidence=0.97) != None:
             map = 'VietnamEC'
             ec = True
             screenshot_val = True
-        elif pyautogui.locateOnScreen('assets/spain.png', grayscale=False, confidence=0.99) != None:
+        elif pyautogui.locateOnScreen('assets/temp/spain.png', grayscale=False, confidence=0.99) != None:
             map = 'Spain'
-        elif pyautogui.locateOnScreen('assets/spainALT.png', grayscale=False, confidence=0.99) != None:
+        elif pyautogui.locateOnScreen('assets/temp/spainALT.png', grayscale=False, confidence=0.99) != None:
             map = 'SpainALT'
-        elif pyautogui.locateOnScreen('assets/spainEC.png', grayscale=False, confidence=0.96) != None:
+        elif pyautogui.locateOnScreen('assets/temp/spainEC.png', grayscale=False, confidence=0.96) != None:
             map = 'SpainEC'
             ec = True
             screenshot_val = True
-        elif pyautogui.locateOnScreen('assets/golan_heights.png', grayscale=False, confidence=0.99) != None:
+        elif pyautogui.locateOnScreen('assets/temp/golan_heights.png', grayscale=False, confidence=0.99) != None:
             map = 'GolanHeights'
-        elif pyautogui.locateOnScreen('assets/golan_heightsALT.png', grayscale=False, confidence=0.99) != None:
+        elif pyautogui.locateOnScreen('assets/temp/golan_heightsALT.png', grayscale=False, confidence=0.99) != None:
             map = 'GolanHeightsALT'
-        elif pyautogui.locateOnScreen('assets/sinai.png', grayscale=False, confidence=0.98) != None:
+        elif pyautogui.locateOnScreen('assets/temp/sinai.png', grayscale=False, confidence=0.98) != None:
             map = 'Sinai'
-        elif pyautogui.locateOnScreen('assets/sinaiALT.png', grayscale=False, confidence=0.98) != None:
+        elif pyautogui.locateOnScreen('assets/temp/sinaiALT.png', grayscale=False, confidence=0.98) != None:
             map = 'SinaiALT'
-        elif pyautogui.locateOnScreen('assets/city.png', grayscale=False, confidence=0.97) != None:
+        elif pyautogui.locateOnScreen('assets/temp/city.png', grayscale=False, confidence=0.97) != None:
             map = 'City'
             city = True
-        elif pyautogui.locateOnScreen('assets/cityALT.png', grayscale=False, confidence=0.97) != None:
+        elif pyautogui.locateOnScreen('assets/temp/cityALT.png', grayscale=False, confidence=0.97) != None:
             map = 'CityALT'
             city = True
-        elif pyautogui.locateOnScreen('assets/rocky_canyonALT.png', grayscale=False, confidence=0.97) != None:
+        elif pyautogui.locateOnScreen('assets/temp/rocky_canyonALT.png', grayscale=False, confidence=0.97) != None:
             map = 'RockyCanyonALT'
             ec = True
             screenshot_val = True
-        elif pyautogui.locateOnScreen('assets/afghanistan.png', grayscale=False, confidence=0.97) != None:
+        elif pyautogui.locateOnScreen('assets/temp/afghanistan.png', grayscale=False, confidence=0.97) != None:
             ec = True
             map = 'RockyCanyonALT'
         else:
@@ -475,7 +537,7 @@ def bot():
         if not city:
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn on Airfield')
-            wait_on('assets/cancel_spawn.png')
+            wait_on('assets/temp/cancel_spawn.png')
             print('CONSOLE: Spawned in')
             # Throttle up, then pitch up
             holdFor(KEYBINDS['throttleUp'], 4)
@@ -496,7 +558,7 @@ def bot():
             # Choose base target
             print('CONSOLE: Choosing Target Base')
             press(KEYBINDS['ccrp'])
-            while pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) == None and height < HEIGHTS[map]/2:
+            while pyautogui.locateOnScreen('assets/temp/centreline.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.95) == None and height < HEIGHTS[map]/2:
                 height = get_attitude()[0]
                 time.sleep(0.1)
             # Pitch down a few times
@@ -507,7 +569,7 @@ def bot():
         elif city:
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn In Airspawn')
-            wait_on('assets/cancel_spawn.png', 0.7)
+            wait_on('assets/temp/cancel_spawn.png', 0.7)
             # Afterburner
             press('w')
             # Start CCRP and choose base
@@ -536,7 +598,7 @@ def bot():
         hold(KEYBINDS['bomb'])
 
         # Bombing loop
-        while pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) == None:
+        while pyautogui.locateOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.95) == None:
             # Temp Condition
             if screenshot_val and zoom_time == 6 and ec:
                 screenshot_screen()
@@ -546,7 +608,7 @@ def bot():
                 screenshot_val = False
 
             base_info = get_base_info(map, base_loc)
-            centreline_location = pyautogui.locateOnScreen('assets/centreline.png', grayscale=False, confidence=0.7)
+            centreline_location = pyautogui.locateOnScreen('assets/temp/centreline.png', grayscale=False, confidence=0.7)
             if centreline_location:
                 center_x, center_y = pyautogui.center(centreline_location)
                 
@@ -607,7 +669,7 @@ def bot():
         brake_flag = False
         press(KEYBINDS['smoke'])
         # Turn right until dead
-        while pyautogui.locateOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) == None:
+        while pyautogui.locateOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.95) == None:
             attitude = get_attitude()
             field_data = get_field_info()
             if not brake_flag:
@@ -625,41 +687,41 @@ def bot():
                 holdFor('j', 4)
 
         # Vehicle has been destroyed
-        if pyautogui.locateOnScreen('assets/j_out.png', grayscale=False, confidence=0.95) != None:
+        if pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.95) != None:
             holdFor('j', 4)
             print('CONSOLE: Aircraft Downed, Returning to Hangar')
 
             # Click 'Return To Hangar' Button
-            wait_for('assets/return_to_hangar.png', False, 0.75)
-            while pyautogui.locateCenterOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.75) != None:
-                move_mouse_to_image('assets/return_to_hangar.png')
+            wait_for('assets/temp/return_to_hangar.png', False, 0.75)
+            while pyautogui.locateCenterOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.75) != None:
+                move_mouse_to_image('assets/temp/return_to_hangar.png')
                 click_mouse()
                 move_mouse_to(100, 100)
                 time.sleep(3)
             
             # Wait for 'To Hangar' Button
-            wait_for('assets/to_hangar.png', False, 0.75)
+            wait_for('assets/temp/to_hangar.png', False, 0.75)
             # Click 'To Hangar' Button
-            while pyautogui.locateCenterOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.75) != None:
-                move_mouse_to_image('assets/to_hangar.png')
+            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) != None:
+                move_mouse_to_image('assets/temp/to_hangar.png')
                 click_mouse()
                 move_mouse_to(100, 100)
                 time.sleep(3)
                 
             
-        elif pyautogui.locateCenterOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.75) != None:
+        elif pyautogui.locateCenterOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.75) != None:
             print('CONSOLE: Aircraft Downed, Returning to Hangar')
-            while pyautogui.locateCenterOnScreen('assets/return_to_hangar.png', grayscale=False, confidence=0.75) != None:
-                move_mouse_to_image('assets/return_to_hangar.png')
+            while pyautogui.locateCenterOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.75) != None:
+                move_mouse_to_image('assets/temp/return_to_hangar.png')
                 click_mouse()
                 move_mouse_to(100, 100)
                 time.sleep(3)
 
             # Wait for 'To Hangar' Button
-            wait_for('assets/to_hangar.png', False, 0.75)
+            wait_for('assets/temp/to_hangar.png', False, 0.75)
             # Click 'To Hangar' Button
-            while pyautogui.locateCenterOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.75) != None:
-                move_mouse_to_image('assets/to_hangar.png')
+            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) != None:
+                move_mouse_to_image('assets/temp/to_hangar.png')
                 click_mouse()
                 move_mouse_to(100, 100)
                 time.sleep(3)
@@ -668,10 +730,10 @@ def bot():
         else:
             print('CONSOLE: Match Ended, Returning to Hangar')
             # Wait for 'To Hangar' Button
-            wait_for('assets/to_hangar.png', False, 0.75)
+            wait_for('assets/temp/to_hangar.png', False, 0.75)
             # Click 'To Hangar' Button
-            while pyautogui.locateCenterOnScreen('assets/to_hangar.png', grayscale=False, confidence=0.75) != None:
-                move_mouse_to_image('assets/to_hangar.png')
+            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) != None:
+                move_mouse_to_image('assets/temp/to_hangar.png')
                 click_mouse()
                 move_mouse_to(100, 100)
                 time.sleep(3)
@@ -787,6 +849,19 @@ def main():
                     # Format the time as HH:MM:SS
                     formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
                     print(f'Bot was running for: {formatted_time}')
+
+                    folder_path = r'assets\temp'
+
+                    # Iterate over each file in the folder
+                    for filename in os.listdir(folder_path):
+                        file_path = os.path.join(folder_path, filename)
+                        
+                        # Check if the current path is a file (not a subdirectory)
+                        if os.path.isfile(file_path):
+                            # Delete the file
+                            os.remove(file_path)
+                            print(f"Deleted file: {file_path}")
+
                     end_program()
         elif not checkbox_var.get():
             # Checkbox is not checked, show an error message

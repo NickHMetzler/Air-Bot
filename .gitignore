@@ -1,7 +1,4 @@
-tester.py
 Air-Bot.py
 data/distances.txt
 data/heights.txt
 .env
-assets/*
-!assets/icons
