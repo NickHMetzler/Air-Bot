@@ -25,9 +25,7 @@ from PIL import Image
 import socket
 import mysql.connector
 from dotenv import load_dotenv
-import tempfile
 import os
-import shutil
 
 # Allow the use of relative paths
 os.chdir(os.path.dirname(__file__))
@@ -39,7 +37,6 @@ for file in os.listdir(script_folder):
 
 # PyAutoGui Failsafe off
 pyautogui.FAILSAFE = False
-temp_dir = None
 
 ###############################
 #          Constants          #
@@ -133,13 +130,6 @@ def process_bin_folder(bin_folder):
                 # Write the PNG data to the temporary file
                 with open(temp_filename, 'wb') as f:
                     f.write(png_data)
-
-                # Use the temporary PNG file as needed
-                # For example, you can display it, process it, etc.
-
-                # Print the temporary file path
-                print("Temporary PNG file:", temp_filename)
-
     finally:
         return
 
@@ -860,8 +850,6 @@ def main():
                         if os.path.isfile(file_path):
                             # Delete the file
                             os.remove(file_path)
-                            print(f"Deleted file: {file_path}")
-
                     end_program()
         elif not checkbox_var.get():
             # Checkbox is not checked, show an error message
