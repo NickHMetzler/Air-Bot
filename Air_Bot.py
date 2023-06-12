@@ -96,7 +96,7 @@ def decrypt_bin_file(bin_file):
         encrypted_data = f.read()
 
     # Decrypt the binary data
-    decryption_key = b'eXqe4xrjdstZTKe3nNNGP8ie8WMqhBZehXev8M1_OEQ='
+    global decryption_key
     cipher = Fernet(decryption_key)
     decrypted_data = cipher.decrypt(encrypted_data)
 
