@@ -132,8 +132,8 @@ def process_bin_folder(bin_folder):
                     f.write(png_data)
     finally:
         return
-
 process_bin_folder("assets/bin")
+
 ###############################
 #   C Struct Redefinitions    #
 ###############################
@@ -440,6 +440,18 @@ def end_program():
     # Send the signal to terminate the program
     os.kill(os.getpid(), 9)
 
+
+def delete_temp_files():
+    folder_path = r'assets\temp'
+    # Iterate over each file in the folder
+    for filename in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, filename)
+        
+        # Check if the current path is a file (not a subdirectory)
+        if os.path.isfile(file_path):
+            # Delete the file
+            os.remove(file_path)
+
 # Bot Loop
 def bot():
     while True:
@@ -737,6 +749,10 @@ def main():
     checkbox_var = tk.BooleanVar()
     key_var = tk.StringVar()
 
+    # Function to handle the window close event
+    def on_window_close():
+        delete_temp_files()
+        end_program()
 
     # Function to update the variable when the text changes
     def update_key_var(event):
@@ -840,16 +856,7 @@ def main():
                     formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
                     print(f'Bot was running for: {formatted_time}')
 
-                    folder_path = r'assets\temp'
-
-                    # Iterate over each file in the folder
-                    for filename in os.listdir(folder_path):
-                        file_path = os.path.join(folder_path, filename)
-                        
-                        # Check if the current path is a file (not a subdirectory)
-                        if os.path.isfile(file_path):
-                            # Delete the file
-                            os.remove(file_path)
+                    delete_temp_files()
                     end_program()
         elif not checkbox_var.get():
             # Checkbox is not checked, show an error message
@@ -857,7 +864,7 @@ def main():
         else:
             messagebox.showinfo("Error", "Incorrect Key")
 
-
+    root.protocol("WM_DELETE_WINDOW", on_window_close)
     root.geometry("800x600")
     root.title("War Thunder Air Bot 0.9")
 
