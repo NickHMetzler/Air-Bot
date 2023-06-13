@@ -1,5 +1,7 @@
 # War Thunder Air RB Bot
 
+![App Screenshot](assets/screenshots/main_screenshot.png?raw=true "Air Bot Main Screen")
+
    This is a Bot designed to play the Kfir Canard in War Thunder automatically. 
    It automatically plays the game and bombs bases to generate silver lions and research points. Please follow the instructions below to set up and use the bot effectively.
 
@@ -22,8 +24,8 @@
    1. Run the `Air_Bot.py` as Administrator to avoid any errors.
    2. Follow the on-screen instructions to start the bot.
    - To stop the bot, press and hold the `q` key for a second.
-   ![App Screenshot](assets/screenshots/main_screenshot.png?raw=true "Vetilance Main Screen")
-
+  
+   
 ## Important Notes
 
    **The Bot is intended for personal use only.** Do not use it for any malicious or unfair purposes.
