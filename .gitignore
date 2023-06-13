@@ -1,4 +1,5 @@
-Air-Bot.py
+text_encryptor.py
+image_encryptor.py
 data/distances.txt
 data/heights.txt
 .env
