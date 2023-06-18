@@ -670,7 +670,6 @@ def bot():
         brake_flag = False
         press(KEYBINDS['smoke'])
         time.sleep(1)
-        print('Check 1')
         # Turn right until dead
         while pyautogui.locateOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.95) == None:
             attitude = get_attitude()
