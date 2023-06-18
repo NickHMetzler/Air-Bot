@@ -1,6 +1,6 @@
 # Naval_Bot.py
 # Plays War Thunder Naval to automatically generate Silver Lions (In Game Currency)
-# 2023-06-11
+# 2023-06-18
 # Nicolas Metzler
 
 # Import Statements
@@ -766,8 +766,6 @@ def main():
 
 
     def check_key(key):
-        if key == "K":
-            return True
         # Get the user's IP address
         ip_address = get_ip_address()
 
@@ -775,18 +773,19 @@ def main():
             # Connect to the MySQL database
             try:
                 connection = mysql.connector.connect(
-                    host="your_host",
-                    user="your_username",
-                    password="your_password",
-                    database="your_database"
+                    host=os.getenv("DB_HOST"),
+                    user=os.getenv("DB_USER"),
+                    password=os.getenv("DB_PASSWORD"),
+                    database=os.getenv("DB_DATABASE"),
+                    auth_plugin=os.getenv("DB_AUTH_PLUGIN")
                 )
 
                 # Create a cursor object to interact with the database
                 cursor = connection.cursor()
 
                 # Prepare the SQL query to check for a matching entry
-                query = "SELECT * FROM users WHERE ip_address = %s AND `key` = %s"
-                values = (ip_address, key)
+                query = "SELECT * FROM users WHERE users_key = %s"
+                values = (key,)
 
                 cursor.execute(query, values)
 
@@ -794,13 +793,29 @@ def main():
 
                 # Check if a matching entry was found
                 if result:
-                    cursor.close()
-                    connection.close()
-                    return True
+                    # Get the user's IP address
+                    user_ip = result[1]  # Assuming `users_ip` is the second column in the table (index 1)
+
+                    # Compare the IP address with the provided one
+                    if user_ip == ip_address:
+                        cursor.close()
+                        connection.close()
+                        return True
+                    else:
+                        # Update the IP address in the database
+                        update_query = "UPDATE users SET users_ip = %s WHERE users_key = %s"
+                        update_values = (ip_address, key)
+                        cursor.execute(update_query, update_values)
+                        connection.commit()
+                        cursor.close()
+                        connection.close()
+                        return True
                 else:
                     cursor.close()
                     connection.close()
                     return False
+
+
 
             except mysql.connector.Error as error:
                 print("Error connecting to MySQL:", error)
