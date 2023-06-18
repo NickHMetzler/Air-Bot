@@ -244,11 +244,13 @@ def get_elapsed_time(startTime):
 #######################
 
 def get_location_data():
-    # Access the map_url variable
     url = os.getenv('map_url')  
     response = requests.get(url)
     if response.status_code == 200:
-        return json.loads(response.text)
+        try:
+            return response.json()
+        except json.decoder.JSONDecodeError as e:
+            print(f"Error decoding JSON: {e}")
     return None
 
 def calculate_ec_base():
@@ -301,6 +303,8 @@ def get_base_info(map, base, ec=False):
             if base_loc == [0, 0]:
                 if map in ['GolanHeightsALT', 'SpainALT', 'SinaiALT', 'VietnamALT']:
                     index = 3
+                elif map == "CityALT":
+                    index = 2
                 else:
                     index = 1
                 if index < len(points_sorted):
@@ -460,6 +464,8 @@ def bot():
             # Do not click if the vehicle needs to be repaired
             if pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95) != None:
                 press(KEYBINDS['enter'])
+            if pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None:
+                press(KEYBINDS['enter'])
             if pyautogui.locateOnScreen('assets/temp/repaired.png', grayscale=False, confidence=0.95) != None:
                 press(KEYBINDS['enter'])
             time.sleep(0.5)
@@ -601,13 +607,6 @@ def bot():
 
         # Bombing loop
         while pyautogui.locateOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.95) == None:
-            # Temp Condition
-            if screenshot_val and zoom_time == 6 and ec:
-                screenshot_screen()
-                hold(KEYBINDS['map'])
-                screenshot_screen()
-                release(KEYBINDS['map'])
-                screenshot_val = False
 
             base_info = get_base_info(map, base_loc)
             centreline_location = pyautogui.locateOnScreen('assets/temp/centreline.png', grayscale=False, confidence=0.7)
@@ -622,7 +621,7 @@ def bot():
             elif brake_flag and base_info[1] > last_dist:
                 release(KEYBINDS['bomb'])
                 break
-            elif base_info and pitch_flag:
+            elif base_info and pitch_flag and not brake_flag:
                 move_mouse_by(int(base_info[0] * 10), 0)
             last_dist = base_info[1]
 
@@ -670,6 +669,8 @@ def bot():
             press(KEYBINDS['airbrake'])
         brake_flag = False
         press(KEYBINDS['smoke'])
+        time.sleep(1)
+        print('Check 1')
         # Turn right until dead
         while pyautogui.locateOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.95) == None:
             attitude = get_attitude()
@@ -701,8 +702,9 @@ def bot():
                 move_mouse_to(100, 100)
                 time.sleep(3)
             
-            # Wait for 'To Hangar' Button
-            wait_for('assets/temp/to_hangar.png', False, 0.75)
+            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) == None:
+                if pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95) != None:
+                    press(KEYBINDS['enter'])
             # Click 'To Hangar' Button
             while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) != None:
                 move_mouse_to_image('assets/temp/to_hangar.png')
@@ -720,7 +722,9 @@ def bot():
                 time.sleep(3)
 
             # Wait for 'To Hangar' Button
-            wait_for('assets/temp/to_hangar.png', False, 0.75)
+            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) == None:
+                if pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95) != None:
+                    press(KEYBINDS['enter'])
             # Click 'To Hangar' Button
             while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) != None:
                 move_mouse_to_image('assets/temp/to_hangar.png')
@@ -732,7 +736,9 @@ def bot():
         else:
             print('CONSOLE: Match Ended, Returning to Hangar')
             # Wait for 'To Hangar' Button
-            wait_for('assets/temp/to_hangar.png', False, 0.75)
+            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) == None:
+                if pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95) != None:
+                    press(KEYBINDS['enter'])
             # Click 'To Hangar' Button
             while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) != None:
                 move_mouse_to_image('assets/temp/to_hangar.png')
