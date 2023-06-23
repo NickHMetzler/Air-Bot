@@ -466,8 +466,8 @@ def bot():
                 press(KEYBINDS['enter'])
             if pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None:
                 press(KEYBINDS['enter'])
-            if pyautogui.locateOnScreen('assets/temp/repaired.png', grayscale=False, confidence=0.95) != None:
-                press(KEYBINDS['enter'])
+            
+            press(KEYBINDS['enter'])
             time.sleep(0.5)
         print("\n\nCONSOLE: To Battle!")
 
@@ -545,7 +545,8 @@ def bot():
         if not city:
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn on Airfield')
-            wait_on('assets/temp/cancel_spawn.png')
+            screenshot_screen()
+            wait_on('assets/temp/cancel_spawn.png', True, 0.65)
             print('CONSOLE: Spawned in')
             # Throttle up, then pitch up
             holdFor(KEYBINDS['throttleUp'], 4)
@@ -635,13 +636,12 @@ def bot():
             if brake_flag:
                 print('CONSOLE: Popping Flares')
                 pyautogui.scroll(-2)
-                pyautogui.scroll(2)
+                
 
             if brake_flag and not mach_flag:
                 mach = get_mach()
                 if mach < 1.0:
                     print('CONSOLE: Retracting Airbrake')
-                    press(KEYBINDS['airbrake'])
                     mach_flag = True
 
             attitude = get_attitude()
@@ -655,8 +655,10 @@ def bot():
                 base_loc = base_info[2]
                 if not brake_flag and base_info[1] <= map_distance:
                     print('CONSOLE: Deploying Airbrake')
-                    press(KEYBINDS['airbrake'])
                     pyautogui.scroll(-2)
+                    press(KEYBINDS['airbrake'])
+                    time.sleep(1)
+                    press(KEYBINDS['airbrake'])
                     brake_flag = True
 
             if pitch_flag and not brake_flag:
@@ -665,8 +667,6 @@ def bot():
         # After Bombing pitch up, throttle down, and bait enemies
         time.sleep(1)
         cruising_height = height + 1000
-        if not mach_flag:
-            press(KEYBINDS['airbrake'])
         brake_flag = False
         press(KEYBINDS['smoke'])
         time.sleep(1)
