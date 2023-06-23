@@ -481,45 +481,50 @@ def bot():
         screenshot_val = False
         city = False
         ec = False
-        if pyautogui.locateOnScreen('assets/temp/vietnam.png', grayscale=False, confidence=0.97) != None:
-            map = 'Vietnam'
-            screenshot_val = True
-        elif pyautogui.locateOnScreen('assets/temp/vietnamALT.png', grayscale=False, confidence=0.96) != None:
-            map = 'VietnamALT'
-        elif pyautogui.locateOnScreen('assets/temp/vietnamEC.png', grayscale=False, confidence=0.97) != None:
-            map = 'VietnamEC'
-            ec = True
-            screenshot_val = True
-        elif pyautogui.locateOnScreen('assets/temp/spain.png', grayscale=False, confidence=0.99) != None:
-            map = 'Spain'
-        elif pyautogui.locateOnScreen('assets/temp/spainALT.png', grayscale=False, confidence=0.99) != None:
-            map = 'SpainALT'
-        elif pyautogui.locateOnScreen('assets/temp/spainEC.png', grayscale=False, confidence=0.96) != None:
-            map = 'SpainEC'
-            ec = True
-            screenshot_val = True
-        elif pyautogui.locateOnScreen('assets/temp/golan_heights.png', grayscale=False, confidence=0.99) != None:
-            map = 'GolanHeights'
-        elif pyautogui.locateOnScreen('assets/temp/golan_heightsALT.png', grayscale=False, confidence=0.99) != None:
-            map = 'GolanHeightsALT'
-        elif pyautogui.locateOnScreen('assets/temp/sinai.png', grayscale=False, confidence=0.98) != None:
-            map = 'Sinai'
-        elif pyautogui.locateOnScreen('assets/temp/sinaiALT.png', grayscale=False, confidence=0.98) != None:
-            map = 'SinaiALT'
-        elif pyautogui.locateOnScreen('assets/temp/city.png', grayscale=False, confidence=0.97) != None:
-            map = 'City'
-            city = True
-        elif pyautogui.locateOnScreen('assets/temp/cityALT.png', grayscale=False, confidence=0.97) != None:
-            map = 'CityALT'
-            city = True
-        elif pyautogui.locateOnScreen('assets/temp/rocky_canyonALT.png', grayscale=False, confidence=0.97) != None:
-            map = 'RockyCanyonALT'
-            ec = True
-            screenshot_val = True
-        elif pyautogui.locateOnScreen('assets/temp/afghanistan.png', grayscale=False, confidence=0.97) != None:
-            ec = True
-            map = 'RockyCanyonALT'
-        else:
+        map = ''
+        inc = 0
+        while map == '' and inc <= 5:
+            if pyautogui.locateOnScreen('assets/temp/vietnam.png', grayscale=False, confidence=0.97) != None:
+                map = 'Vietnam'
+                screenshot_val = True
+            elif pyautogui.locateOnScreen('assets/temp/vietnamALT.png', grayscale=False, confidence=0.96) != None:
+                map = 'VietnamALT'
+            elif pyautogui.locateOnScreen('assets/temp/vietnamEC.png', grayscale=False, confidence=0.97) != None:
+                map = 'VietnamEC'
+                ec = True
+                screenshot_val = True
+            elif pyautogui.locateOnScreen('assets/temp/spain.png', grayscale=False, confidence=0.99) != None:
+                map = 'Spain'
+            elif pyautogui.locateOnScreen('assets/temp/spainALT.png', grayscale=False, confidence=0.99) != None:
+                map = 'SpainALT'
+            elif pyautogui.locateOnScreen('assets/temp/spainEC.png', grayscale=False, confidence=0.96) != None:
+                map = 'SpainEC'
+                ec = True
+                screenshot_val = True
+            elif pyautogui.locateOnScreen('assets/temp/golan_heights.png', grayscale=False, confidence=0.98) != None:
+                map = 'GolanHeights'
+            elif pyautogui.locateOnScreen('assets/temp/golan_heightsALT.png', grayscale=False, confidence=0.98) != None:
+                map = 'GolanHeightsALT'
+            elif pyautogui.locateOnScreen('assets/temp/sinai.png', grayscale=False, confidence=0.98) != None:
+                map = 'Sinai'
+            elif pyautogui.locateOnScreen('assets/temp/sinaiALT.png', grayscale=False, confidence=0.98) != None:
+                map = 'SinaiALT'
+            elif pyautogui.locateOnScreen('assets/temp/city.png', grayscale=False, confidence=0.97) != None:
+                map = 'City'
+                city = True
+            elif pyautogui.locateOnScreen('assets/temp/cityALT.png', grayscale=False, confidence=0.97) != None:
+                map = 'CityALT'
+                city = True
+            elif pyautogui.locateOnScreen('assets/temp/rocky_canyonALT.png', grayscale=False, confidence=0.97) != None:
+                map = 'RockyCanyonALT'
+                ec = True
+                screenshot_val = True
+            elif pyautogui.locateOnScreen('assets/temp/afghanistan.png', grayscale=False, confidence=0.97) != None:
+                ec = True
+                map = 'RockyCanyonALT'
+            inc += 1
+            time.sleep(0.5)
+        if map == '':
             ec = True
             map = 'RockyCanyonALT'
             screenshot_val = True
@@ -531,6 +536,7 @@ def bot():
         # In Battle, click the Spawn In button
         press(KEYBINDS['enter'])
         print("CONSOLE: Spawn Button Clicked") 
+        screenshot_screen()
         time.sleep(1)
             
 
