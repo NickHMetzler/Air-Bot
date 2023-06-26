@@ -23,9 +23,10 @@ import customtkinter as ctk
 import datetime
 from PIL import Image
 import socket
-import mysql.connector
 from dotenv import load_dotenv
 import os
+from cryptography.fernet import Fernet
+import io
 
 # Allow the use of relative paths
 os.chdir(os.path.dirname(__file__))
@@ -82,10 +83,13 @@ with open('data/keybinds.txt', 'r') as file:
 # Evaluate the contents as Python code
 KEYBINDS = eval(contents)
 
+# Get User's KeyBinds from file
+with open('data/maps.txt', 'r') as file:
+    # Read the contents of the file
+    contents = file.read()
 
-from cryptography.fernet import Fernet
-from PIL import Image
-import io
+# Evaluate the contents as Python code
+MAPS = eval(contents)
 
 def decrypt_bin_file(bin_file):
     # Read the binary file
@@ -243,6 +247,16 @@ def get_elapsed_time(startTime):
 #   Query Functions   #
 #######################
 
+def get_map_info():
+    json_data = get_location_data()
+    if json_data:
+        field = next((obj for obj in json_data if obj["type"] == "airfield" and obj["color"] == "#fa0C00"), None)
+        if field:
+            field_x = round((field["sx"] + field["ex"]) / 2, 2)
+            field_y = round((field["sy"] + field["ey"]) / 2, 2)
+            print(field_x, field_y)
+            return field_x, field_y
+        
 def get_location_data():
     url = os.getenv('map_url')  
     response = requests.get(url)
@@ -380,7 +394,7 @@ def pitch_control(target_height, curr_height, attitude):
         move_mouse_by(0, -20)
     elif height_diff > 25 and attitude > 0.0:
         move_mouse_by(0, 7)
-    elif height_diff < 0 and 0.1 < attitude < target_height:
+    elif height_diff < 0 and attitude < 0.5:
         move_mouse_by(0, -7)
 
 
@@ -466,8 +480,9 @@ def bot():
                 press(KEYBINDS['enter'])
             if pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None:
                 press(KEYBINDS['enter'])
+            if pyautogui.locateOnScreen('assets/temp/repaired.png', grayscale=False, confidence=0.97) != None:
+                press(KEYBINDS['enter'])
             
-            press(KEYBINDS['enter'])
             time.sleep(0.5)
         print("\n\nCONSOLE: To Battle!")
 
@@ -483,37 +498,26 @@ def bot():
         ec = False
         map = ''
         inc = 0
+        exception_flag = False
         while map == '' and inc <= 5:
-            if pyautogui.locateOnScreen('assets/temp/vietnam.png', grayscale=False, confidence=0.97) != None:
-                map = 'Vietnam'
-                screenshot_val = True
-            elif pyautogui.locateOnScreen('assets/temp/vietnamALT.png', grayscale=False, confidence=0.96) != None:
-                map = 'VietnamALT'
-            elif pyautogui.locateOnScreen('assets/temp/vietnamEC.png', grayscale=False, confidence=0.97) != None:
+            map_coords=get_map_info()
+            try:
+                map = MAPS[map_coords]
+                if map == 'City' or map == 'CityALT':
+                    city = True
+                break
+            except:
+                print(f"exception: map_coords are {map_coords}")
+                exception_flag = True
+            if pyautogui.locateOnScreen('assets/temp/vietnamEC.png', grayscale=False, confidence=0.97) != None:
                 map = 'VietnamEC'
                 ec = True
-                screenshot_val = True
-            elif pyautogui.locateOnScreen('assets/temp/spain.png', grayscale=False, confidence=0.99) != None:
-                map = 'Spain'
-            elif pyautogui.locateOnScreen('assets/temp/spainALT.png', grayscale=False, confidence=0.99) != None:
-                map = 'SpainALT'
             elif pyautogui.locateOnScreen('assets/temp/spainEC.png', grayscale=False, confidence=0.96) != None:
                 map = 'SpainEC'
                 ec = True
                 screenshot_val = True
-            elif pyautogui.locateOnScreen('assets/temp/golan_heights.png', grayscale=False, confidence=0.98) != None:
-                map = 'GolanHeights'
-            elif pyautogui.locateOnScreen('assets/temp/golan_heightsALT.png', grayscale=False, confidence=0.98) != None:
-                map = 'GolanHeightsALT'
-            elif pyautogui.locateOnScreen('assets/temp/sinai.png', grayscale=False, confidence=0.98) != None:
-                map = 'Sinai'
-            elif pyautogui.locateOnScreen('assets/temp/sinaiALT.png', grayscale=False, confidence=0.98) != None:
-                map = 'SinaiALT'
             elif pyautogui.locateOnScreen('assets/temp/city.png', grayscale=False, confidence=0.97) != None:
                 map = 'City'
-                city = True
-            elif pyautogui.locateOnScreen('assets/temp/cityALT.png', grayscale=False, confidence=0.97) != None:
-                map = 'CityALT'
                 city = True
             elif pyautogui.locateOnScreen('assets/temp/rocky_canyonALT.png', grayscale=False, confidence=0.97) != None:
                 map = 'RockyCanyonALT'
@@ -531,6 +535,9 @@ def bot():
         # Temp condition
         if screenshot_val: 
             screenshot_screen()
+        if exception_flag:
+            with open("data/checker.txt", "a") as file:
+                file.write(f"\nInfo:{map_coords} : '{map}'")
 
         
         # In Battle, click the Spawn In button
@@ -557,6 +564,7 @@ def bot():
             # Throttle up, then pitch up
             holdFor(KEYBINDS['throttleUp'], 4)
             move_mouse_by(0, -pitch_value)
+            press('f12')
         
             # Start CCRP and choose base
             print('CONSOLE: Activating CCRP')
@@ -588,6 +596,7 @@ def bot():
             # Afterburner
             press('w')
             # Start CCRP and choose base
+            press('f12')
             time.sleep(5)
             print('CONSOLE: Activating CCRP')
             press(KEYBINDS['ccrp'])
@@ -775,55 +784,19 @@ def main():
         ip_address = get_ip_address()
 
         if ip_address:
-            # Connect to the MySQL database
-            try:
-                connection = mysql.connector.connect(
-                    host=os.getenv("DB_HOST"),
-                    user=os.getenv("DB_USER"),
-                    password=os.getenv("DB_PASSWORD"),
-                    database=os.getenv("DB_DATABASE"),
-                    auth_plugin=os.getenv("DB_AUTH_PLUGIN")
-                )
+            url = os.getenv('server_ip')
 
-                # Create a cursor object to interact with the database
-                cursor = connection.cursor()
+            # JSON payload for the request
+            payload = {
+                'users_key': key,
+                'users_ip': ip_address
+            }
 
-                # Prepare the SQL query to check for a matching entry
-                query = "SELECT * FROM users WHERE users_key = %s"
-                values = (key,)
+            response = requests.post(url, json=payload)
 
-                cursor.execute(query, values)
-
-                result = cursor.fetchone()
-
-                # Check if a matching entry was found
-                if result:
-                    # Get the user's IP address
-                    user_ip = result[1]  # Assuming `users_ip` is the second column in the table (index 1)
-
-                    # Compare the IP address with the provided one
-                    if user_ip == ip_address:
-                        cursor.close()
-                        connection.close()
-                        return True
-                    else:
-                        # Update the IP address in the database
-                        update_query = "UPDATE users SET users_ip = %s WHERE users_key = %s"
-                        update_values = (ip_address, key)
-                        cursor.execute(update_query, update_values)
-                        connection.commit()
-                        cursor.close()
-                        connection.close()
-                        return True
-                else:
-                    cursor.close()
-                    connection.close()
-                    return False
-
-
-
-            except mysql.connector.Error as error:
-                print("Error connecting to MySQL:", error)
+            if response.text == "True":
+                return True
+            return False
 
         else:
             print("Unable to retrieve the IP address.")
