@@ -47,6 +47,7 @@ load_dotenv()
 
 # Get the decryption key from the environment variables
 decryption_key = os.getenv('decryption_key')
+
 # Char/Str to Scancode for Bot Game Inputs
 # https://kbdlayout.info/kbdusx/scancodes
 with open('data/keycodes.txt', 'r') as file:
@@ -83,7 +84,7 @@ with open('data/keybinds.txt', 'r') as file:
 # Evaluate the contents as Python code
 KEYBINDS = eval(contents)
 
-# Get User's KeyBinds from file
+# Get Map Data from file
 with open('data/maps.txt', 'r') as file:
     # Read the contents of the file
     contents = file.read()
@@ -91,6 +92,11 @@ with open('data/maps.txt', 'r') as file:
 # Evaluate the contents as Python code
 MAPS = eval(contents)
 
+###############################
+#      Asset Decryption       #
+###############################
+
+# Decrypt the bin files
 def decrypt_bin_file(bin_file):
     # Read the binary file
     with open(bin_file, 'rb') as f:
@@ -103,6 +109,7 @@ def decrypt_bin_file(bin_file):
 
     return decrypted_data
 
+# Convert bin data to png
 def convert_to_png(data):
     # Create a PIL Image object from the decrypted data
     image = Image.open(io.BytesIO(data))
@@ -114,6 +121,7 @@ def convert_to_png(data):
 
     return png_data.read()
 
+# Convert all bin files to png
 def process_bin_folder(bin_folder):
     temp_dir = r"assets\temp"
 
@@ -124,7 +132,6 @@ def process_bin_folder(bin_folder):
                 bin_file = os.path.join(bin_folder, filename)
 
                 # Decrypt the binary file and convert it to PNG
-                # Replace this code with your actual decryption and conversion logic
                 decrypted_data = decrypt_bin_file(bin_file)
                 png_data = convert_to_png(decrypted_data)
 
@@ -136,7 +143,6 @@ def process_bin_folder(bin_folder):
                     f.write(png_data)
     finally:
         return
-process_bin_folder("assets/bin")
 
 ###############################
 #   C Struct Redefinitions    #
@@ -214,6 +220,7 @@ def screenshot_screen():
     myScreenshot = pyautogui.screenshot()
     # Save the screenshot with the new file name
     myScreenshot.save(os.path.join(folder_path, file_name))
+    return new_number
 
 # Check if given image is on the screen
 def is_image_on_screen(image_path, grayscale=True, confidence=0.7):
@@ -243,20 +250,12 @@ def get_elapsed_time(startTime):
     elapsed_time = current_time - startTime
     return elapsed_time
 
+
 #######################
 #   Query Functions   #
 #######################
 
-def get_map_info():
-    json_data = get_location_data()
-    if json_data:
-        field = next((obj for obj in json_data if obj["type"] == "airfield" and obj["color"] == "#fa0C00"), None)
-        if field:
-            field_x = round((field["sx"] + field["ex"]) / 2, 2)
-            field_y = round((field["sy"] + field["ey"]) / 2, 2)
-            print(field_x, field_y)
-            return field_x, field_y
-        
+# Query localhost for location data
 def get_location_data():
     url = os.getenv('map_url')  
     response = requests.get(url)
@@ -267,6 +266,18 @@ def get_location_data():
             print(f"Error decoding JSON: {e}")
     return None
 
+# Find the enemy base location
+def get_map_info():
+    json_data = get_location_data()
+    if json_data:
+        field = next((obj for obj in json_data if obj["type"] == "airfield" and obj["color"] == "#fa0C00"), None)
+        if field:
+            field_x = round((field["sx"] + field["ex"]) / 2, 2)
+            field_y = round((field["sy"] + field["ey"]) / 2, 2)
+            print(field_x, field_y)
+            return field_x, field_y
+
+# Calculate which base the plane is facing
 def calculate_ec_base():
     json_data = get_location_data()
     points = []
@@ -298,7 +309,7 @@ def calculate_ec_base():
         return points[min_index]
 
 
-# Returns the angle toward the enemy airfield
+# Returns the angle, distance, and location toward the enemy base
 def get_base_info(map, base, ec=False):
     json_data = get_location_data()
     base_loc = base
@@ -315,7 +326,7 @@ def get_base_info(map, base, ec=False):
         points_sorted = sorted(set(points))
         if x is not None:
             if base_loc == [0, 0]:
-                if map in ['GolanHeightsALT', 'SpainALT', 'SinaiALT', 'VietnamALT']:
+                if map in ['GolanHeightsALT', 'SpainALT', 'SinaiALT', 'VietnamALT', 'PyreneesALT']:
                     index = 3
                 elif map == "CityALT":
                     index = 2
@@ -337,7 +348,7 @@ def get_base_info(map, base, ec=False):
             else:
                 return 0.0, 2.0, [0, 0]
          
-        
+# Returns the angle, distance, and location toward the enemy airfield
 def get_field_info():
     json_data = get_location_data()
     if json_data:
@@ -354,16 +365,17 @@ def get_field_info():
             distance = math.sqrt((x - field_x)**2 + (y - field_y)**2)
             return angle_degrees, distance
             
-
 # Returns the current Height and Rate of Climb
 def get_attitude():
     url = os.getenv('att_url')
     response = requests.get(url)
     if response.status_code == 200:
         json_data = json.loads(response.text)
-        return_data = (json_data["H, m"], json_data["Vy, m/s"])
+        try:
+            return_data = (json_data["H, m"], json_data["Vy, m/s"])
+        except:
+            return_data = (1000, 0.0)
         return return_data
-
 
 # Returns the speed in Mach
 def get_mach():
@@ -378,6 +390,7 @@ def get_mach():
 #   Control Functions   #
 #########################
 
+# Change the pitch of the plane based on height and RoC
 def pitch_control(target_height, curr_height, attitude):
     height_diff = curr_height - target_height
     if height_diff > 100 and attitude > 20.0:
@@ -396,7 +409,6 @@ def pitch_control(target_height, curr_height, attitude):
         move_mouse_by(0, 7)
     elif height_diff < 0 and attitude < 0.5:
         move_mouse_by(0, -7)
-
 
 # Click mouse
 def click_mouse():
@@ -442,13 +454,6 @@ def holdFor(key, seconds):
     time.sleep(seconds) 
     release(key)
 
-# Type a given key
-# Function is faster, designed for typing messages
-def type(key):
-    hold(key)
-    time.sleep(np.random.uniform(0.1,0.3)) 
-    release(key)
-
 #########################
 #   General Functions   #
 #########################
@@ -458,7 +463,7 @@ def end_program():
     # Send the signal to terminate the program
     os.kill(os.getpid(), 9)
 
-
+# Delete temp files when the program ends
 def delete_temp_files():
     folder_path = r'assets\temp'
     # Iterate over each file in the folder
@@ -472,28 +477,30 @@ def delete_temp_files():
 
 # Bot Loop
 def bot():
+    # Process the bin folder
+    process_bin_folder("assets/bin")
     while True:
         # Click 'To Battle' Button in Main Menu
         while pyautogui.locateOnScreen('assets/temp/in_queue.png', grayscale=False, confidence=0.75) == None:
-            # Do not click if the vehicle needs to be repaired
+            # Check for battle trophy, to hangar button, and if the plane is repaired
             if pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95) != None:
                 press(KEYBINDS['enter'])
             if pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None:
                 press(KEYBINDS['enter'])
             if pyautogui.locateOnScreen('assets/temp/repaired.png', grayscale=False, confidence=0.97) != None:
                 press(KEYBINDS['enter'])
-            
             time.sleep(0.5)
+
         print("\n\nCONSOLE: To Battle!")
 
         # Wait to Join Battle
         print('CONSOLE: Waiting in Qeue...')
         wait_for('assets/temp/spawn.png', grayscale=False, confidence=0.8)
+        print('CONSOLE: In Spawn Screen')
         
         # Check which map match is taking place on
         move_mouse_to(100, 100)
         # Temp Variable
-        screenshot_val = False
         city = False
         ec = False
         map = ''
@@ -505,49 +512,32 @@ def bot():
                 map = MAPS[map_coords]
                 if map == 'City' or map == 'CityALT':
                     city = True
+                elif map == 'VietnamEC' or map == 'SpainEC' or map == 'Afghanistan' or map == 'RockyCanyon' or map == 'RockyCanyonALT':
+                    ec = True
                 break
             except:
                 print(f"exception: map_coords are {map_coords}")
                 exception_flag = True
-            if pyautogui.locateOnScreen('assets/temp/vietnamEC.png', grayscale=False, confidence=0.97) != None:
-                map = 'VietnamEC'
-                ec = True
-            elif pyautogui.locateOnScreen('assets/temp/spainEC.png', grayscale=False, confidence=0.96) != None:
-                map = 'SpainEC'
-                ec = True
-                screenshot_val = True
-            elif pyautogui.locateOnScreen('assets/temp/city.png', grayscale=False, confidence=0.97) != None:
-                map = 'City'
-                city = True
-            elif pyautogui.locateOnScreen('assets/temp/rocky_canyonALT.png', grayscale=False, confidence=0.97) != None:
+            if pyautogui.locateOnScreen('assets/temp/rocky_canyonALT.png', grayscale=False, confidence=0.97) != None:
                 map = 'RockyCanyonALT'
                 ec = True
-                screenshot_val = True
-            elif pyautogui.locateOnScreen('assets/temp/afghanistan.png', grayscale=False, confidence=0.97) != None:
-                ec = True
-                map = 'RockyCanyonALT'
             inc += 1
             time.sleep(0.5)
         if map == '':
             ec = True
             map = 'RockyCanyonALT'
-            screenshot_val = True
-        # Temp condition
-        if screenshot_val: 
-            screenshot_screen()
-        if exception_flag:
-            with open("data/checker.txt", "a") as file:
-                file.write(f"\nInfo:{map_coords} : '{map}'")
 
+        # Temp condition
+        if exception_flag:
+            screenshot_num = screenshot_screen()
+            with open("data/checker.txt", "a") as file:
+                file.write(f"\nInfo:{map_coords} : 'Screenshot #{screenshot_num}'")
+        print(f'CONSOLE: Map is {map}') 
         
         # In Battle, click the Spawn In button
         press(KEYBINDS['enter'])
-        print("CONSOLE: Spawn Button Clicked") 
-        screenshot_screen()
+        print("CONSOLE: Spawn Button Clicked")
         time.sleep(1)
-            
-
-        print(f'CONSOLE: Map is {map}')
 
         # Pitch values
         pitch_value = 184
@@ -558,12 +548,12 @@ def bot():
         if not city:
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn on Airfield')
-            screenshot_screen()
             wait_on('assets/temp/cancel_spawn.png', True, 0.65)
             print('CONSOLE: Spawned in')
             # Throttle up, then pitch up
             holdFor(KEYBINDS['throttleUp'], 4)
             move_mouse_by(0, -pitch_value)
+            # Temp, replace with actual val
             press('f12')
         
             # Start CCRP and choose base
@@ -581,6 +571,8 @@ def bot():
             # Choose base target
             print('CONSOLE: Choosing Target Base')
             press(KEYBINDS['ccrp'])
+
+            # Wait until the centreline is spotted, or the height is half the target height
             while pyautogui.locateOnScreen('assets/temp/centreline.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.95) == None and height < HEIGHTS[map]/2:
                 height = get_attitude()[0]
                 time.sleep(0.1)
@@ -588,7 +580,7 @@ def bot():
             for i in range(3):
                     move_mouse_by(0, downVal + 5)
                     time.sleep(1)
-        # Air Spawn
+        # Air Spawn Procedure
         elif city:
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn In Airspawn')
@@ -596,6 +588,7 @@ def bot():
             # Afterburner
             press('w')
             # Start CCRP and choose base
+            # Temp, replace with actual var
             press('f12')
             time.sleep(5)
             print('CONSOLE: Activating CCRP')
@@ -623,8 +616,12 @@ def bot():
 
         # Bombing loop
         while pyautogui.locateOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.95) == None:
-
+            
+            # Get the base info
             base_info = get_base_info(map, base_loc)
+            if map == 'Pyrenees':
+                print(f'Base info is {base_info}')    
+            # Aim plane towards the base
             centreline_location = pyautogui.locateOnScreen('assets/temp/centreline.png', grayscale=False, confidence=0.7)
             if centreline_location:
                 center_x, center_y = pyautogui.center(centreline_location)
@@ -634,38 +631,45 @@ def bot():
                 
                 distance_x = int((center_x - screen_center_x) / 2)
                 move_mouse_by(distance_x, 0)
+            # Base passed, release bombing button
             elif brake_flag and base_info[1] > last_dist:
                 release(KEYBINDS['bomb'])
                 break
+            # Move mouse towards base if no centreline
             elif base_info and pitch_flag and not brake_flag:
                 move_mouse_by(int(base_info[0] * 10), 0)
             last_dist = base_info[1]
 
+            # Zoom in after 6 cycles
             if zoom_time >= 6 and not zoom_flag:
                 press(KEYBINDS['zoom'])
                 zoom_flag = True
+            # Calculate which base plane is facing
             elif zoom_time == 10 and ec:
                 base_loc = calculate_ec_base()
             zoom_time += 1
 
+            # Pop flares when subsonic
             if brake_flag:
                 print('CONSOLE: Popping Flares')
                 pyautogui.scroll(-2)
-                
-
+            
+            # Retract airbrake when under mach 1
             if brake_flag and not mach_flag:
                 mach = get_mach()
                 if mach < 1.0:
                     print('CONSOLE: Retracting Airbrake')
                     mach_flag = True
 
+            # Climb ended, pitch down
             attitude = get_attitude()
-            if not city and not pitch_flag and attitude[0] > height - 10:
+            if not city and not pitch_flag and attitude[0] > height - 30:
                 move_mouse_by(0, downVal + 5)
                 move_mouse_by(0, downVal + 5)
                 time.sleep(1)
                 pitch_flag = True
 
+            # Kil lafterburner and deploy airbrake when close enough to base
             if base_info and zoom_time != 11:
                 base_loc = base_info[2]
                 if not brake_flag and base_info[1] <= map_distance:
@@ -676,8 +680,12 @@ def bot():
                     press(KEYBINDS['airbrake'])
                     brake_flag = True
 
+            # Maintain height
             if pitch_flag and not brake_flag:
                 pitch_control(height, attitude[0], attitude[1])
+
+            if base_info:
+                print(f'CONSOLE: Base is {base_info[1]} distance away')
             
         # After Bombing pitch up, throttle down, and bait enemies
         time.sleep(1)
@@ -685,7 +693,8 @@ def bot():
         brake_flag = False
         press(KEYBINDS['smoke'])
         time.sleep(1)
-        # Turn right until dead
+        
+        # Aim towards base until dead
         while pyautogui.locateOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.95) == None:
             attitude = get_attitude()
             field_data = get_field_info()
