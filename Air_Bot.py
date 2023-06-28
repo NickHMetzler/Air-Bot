@@ -568,12 +568,12 @@ def bot():
         if not city:
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn on Airfield')
-            wait_on('assets/temp/cancel_spawn.png')
+            wait_on('assets/temp/cancel_spawn.png', True, 0.85)
             print('CONSOLE: Spawned in')
             # Throttle up, then pitch up
             holdFor(KEYBINDS['throttleUp'], 4)
             move_mouse_by(0, -pitch_value)
-        
+            press(KEYBINDS['radar'])
             # Start CCRP and choose base
             print('CONSOLE: Activating CCRP')
             press(KEYBINDS['ccrp'])

@@ -8,6 +8,7 @@
 'smoke' : 'l',
 'map' : 'm',
 'throttleUp' : 'w',
-'throttleDown' : 's'
+'throttleDown' : 's',
+radar : 'f12'
 }
 
