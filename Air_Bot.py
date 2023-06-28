@@ -23,9 +23,14 @@ import customtkinter as ctk
 import datetime
 from PIL import Image
 import socket
-import mysql.connector
 from dotenv import load_dotenv
 import os
+from cryptography.fernet import Fernet
+import io
+
+# Global Variables
+resolution = None
+aircraft = None
 
 # Allow the use of relative paths
 os.chdir(os.path.dirname(__file__))
@@ -82,11 +87,19 @@ with open('data/keybinds.txt', 'r') as file:
 # Evaluate the contents as Python code
 KEYBINDS = eval(contents)
 
+# Get Map Data from file
+with open('data/maps.txt', 'r') as file:
+    # Read the contents of the file
+    contents = file.read()
 
-from cryptography.fernet import Fernet
-from PIL import Image
-import io
+# Evaluate the contents as Python code
+MAPS = eval(contents)
 
+###############################
+#      Asset Decryption       #
+###############################
+
+# Decrypt the bin files
 def decrypt_bin_file(bin_file):
     # Read the binary file
     with open(bin_file, 'rb') as f:
@@ -99,6 +112,7 @@ def decrypt_bin_file(bin_file):
 
     return decrypted_data
 
+# Convert bin data to png
 def convert_to_png(data):
     # Create a PIL Image object from the decrypted data
     image = Image.open(io.BytesIO(data))
@@ -110,6 +124,7 @@ def convert_to_png(data):
 
     return png_data.read()
 
+# Convert all bin files to png
 def process_bin_folder(bin_folder):
     temp_dir = r"assets\temp"
 
@@ -120,7 +135,6 @@ def process_bin_folder(bin_folder):
                 bin_file = os.path.join(bin_folder, filename)
 
                 # Decrypt the binary file and convert it to PNG
-                # Replace this code with your actual decryption and conversion logic
                 decrypted_data = decrypt_bin_file(bin_file)
                 png_data = convert_to_png(decrypted_data)
 
@@ -132,6 +146,8 @@ def process_bin_folder(bin_folder):
                     f.write(png_data)
     finally:
         return
+
+# Process the bin folder# Temp Change to after selection
 process_bin_folder("assets/bin")
 
 ###############################
@@ -210,6 +226,7 @@ def screenshot_screen():
     myScreenshot = pyautogui.screenshot()
     # Save the screenshot with the new file name
     myScreenshot.save(os.path.join(folder_path, file_name))
+    return new_number
 
 # Check if given image is on the screen
 def is_image_on_screen(image_path, grayscale=True, confidence=0.7):
@@ -239,10 +256,12 @@ def get_elapsed_time(startTime):
     elapsed_time = current_time - startTime
     return elapsed_time
 
+
 #######################
 #   Query Functions   #
 #######################
 
+# Query localhost for location data
 def get_location_data():
     url = os.getenv('map_url')  
     response = requests.get(url)
@@ -253,6 +272,27 @@ def get_location_data():
             print(f"Error decoding JSON: {e}")
     return None
 
+# Find the enemy base location
+def get_map_info():
+    json_data = get_location_data()
+    if json_data:
+        field = next((obj for obj in json_data if obj["type"] == "airfield" and obj["color"] == "#fa0C00"), None)
+        if field:
+            field_x = round((field["sx"] + field["ex"]) / 2, 2)
+            field_y = round((field["sy"] + field["ey"]) / 2, 2)
+            print(field_x, field_y)
+            return field_x, field_y
+        
+def get_spawn_info():
+    json_data = get_location_data()
+    if json_data:
+        player = next((obj for obj in json_data if obj["icon"] == "Player"), None)
+        if player:
+            return True
+        else:
+            return False
+        
+# Calculate which base the plane is facing
 def calculate_ec_base():
     json_data = get_location_data()
     points = []
@@ -284,7 +324,7 @@ def calculate_ec_base():
         return points[min_index]
 
 
-# Returns the angle toward the enemy airfield
+# Returns the angle, distance, and location toward the enemy base
 def get_base_info(map, base, ec=False):
     json_data = get_location_data()
     base_loc = base
@@ -323,7 +363,7 @@ def get_base_info(map, base, ec=False):
             else:
                 return 0.0, 2.0, [0, 0]
          
-        
+# Returns the angle, distance, and location toward the enemy airfield
 def get_field_info():
     json_data = get_location_data()
     if json_data:
@@ -340,16 +380,17 @@ def get_field_info():
             distance = math.sqrt((x - field_x)**2 + (y - field_y)**2)
             return angle_degrees, distance
             
-
 # Returns the current Height and Rate of Climb
 def get_attitude():
     url = os.getenv('att_url')
     response = requests.get(url)
     if response.status_code == 200:
         json_data = json.loads(response.text)
-        return_data = (json_data["H, m"], json_data["Vy, m/s"])
+        try:
+            return_data = (json_data["H, m"], json_data["Vy, m/s"])
+        except:
+            return_data = (1000, 0.0)
         return return_data
-
 
 # Returns the speed in Mach
 def get_mach():
@@ -364,24 +405,34 @@ def get_mach():
 #   Control Functions   #
 #########################
 
+# Change the pitch of the plane based on height and RoC
 def pitch_control(target_height, curr_height, attitude):
     height_diff = curr_height - target_height
+
+    # Calculate the scaling factor based on the resolution
+    global resolution
+    scaling_factor = 1.0
+    if resolution == 1440:
+        scaling_factor = 1.333
+    elif resolution == 2160:
+        scaling_factor = 2.0
+
     if height_diff > 100 and attitude > 20.0:
-        move_mouse_by(0, 60)
+        move_mouse_by(0, int(60 * scaling_factor))
     elif height_diff < 0 and attitude < -20.0:
-        move_mouse_by(0, -60)
+        move_mouse_by(0, int(-60 * scaling_factor))
     elif height_diff > 100 and attitude > 10.0:
-        move_mouse_by(0, 30)
+        move_mouse_by(0, int(30 * scaling_factor))
     elif height_diff < 0 and attitude < -10.0:
-        move_mouse_by(0, -30)
+        move_mouse_by(0, int(-30 * scaling_factor))
     elif height_diff > 100 and attitude > 5.0:
-        move_mouse_by(0, 20)
+        move_mouse_by(0, int(20 * scaling_factor))
     elif height_diff < 0 and attitude < -5.0:
-        move_mouse_by(0, -20)
+        move_mouse_by(0, int(-20 * scaling_factor))
     elif height_diff > 25 and attitude > 0.0:
-        move_mouse_by(0, 7)
-    elif height_diff < 0 and 0.1 < attitude < target_height:
-        move_mouse_by(0, -7)
+        move_mouse_by(0, int(7 * scaling_factor))
+    elif height_diff < 0 and attitude < 0.5:
+        move_mouse_by(0, int(-7 * scaling_factor))
 
 
 # Click mouse
@@ -428,13 +479,6 @@ def holdFor(key, seconds):
     time.sleep(seconds) 
     release(key)
 
-# Type a given key
-# Function is faster, designed for typing messages
-def type(key):
-    hold(key)
-    time.sleep(np.random.uniform(0.1,0.3)) 
-    release(key)
-
 #########################
 #   General Functions   #
 #########################
@@ -444,7 +488,7 @@ def end_program():
     # Send the signal to terminate the program
     os.kill(os.getpid(), 9)
 
-
+# Delete temp files when the program ends
 def delete_temp_files():
     folder_path = r'assets\temp'
     # Iterate over each file in the folder
@@ -458,86 +502,66 @@ def delete_temp_files():
 
 # Bot Loop
 def bot():
+    global aircraft
     while True:
         # Click 'To Battle' Button in Main Menu
         while pyautogui.locateOnScreen('assets/temp/in_queue.png', grayscale=False, confidence=0.75) == None:
-            # Do not click if the vehicle needs to be repaired
-            if pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95) != None:
-                press(KEYBINDS['enter'])
-            if pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None:
-                press(KEYBINDS['enter'])
-            if pyautogui.locateOnScreen('assets/temp/repaired.png', grayscale=False, confidence=0.95) != None:
+            # Check for battle trophy, to hangar button, and if the plane is repaired
+            if pyautogui.locateOnScreen(f'assets/temp/{aircraft}_repaired.png', grayscale=False, confidence=0.97) != None or pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95) != None or pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None or pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None or pyautogui.locateOnScreen(f'assets/temp/invitation.png', grayscale=False, confidence=0.97) != None:
                 press(KEYBINDS['enter'])
             time.sleep(0.5)
+
         print("\n\nCONSOLE: To Battle!")
 
         # Wait to Join Battle
         print('CONSOLE: Waiting in Qeue...')
-        wait_for('assets/temp/spawn.png', grayscale=False, confidence=0.8)
+        wait_for('assets/temp/spawn.png', grayscale=False, confidence=0.7)
+        print('CONSOLE: In Spawn Screen')
         
         # Check which map match is taking place on
         move_mouse_to(100, 100)
         # Temp Variable
-        screenshot_val = False
         city = False
         ec = False
-        if pyautogui.locateOnScreen('assets/temp/vietnam.png', grayscale=False, confidence=0.97) != None:
-            map = 'Vietnam'
-            screenshot_val = True
-        elif pyautogui.locateOnScreen('assets/temp/vietnamALT.png', grayscale=False, confidence=0.96) != None:
-            map = 'VietnamALT'
-        elif pyautogui.locateOnScreen('assets/temp/vietnamEC.png', grayscale=False, confidence=0.97) != None:
-            map = 'VietnamEC'
-            ec = True
-            screenshot_val = True
-        elif pyautogui.locateOnScreen('assets/temp/spain.png', grayscale=False, confidence=0.99) != None:
-            map = 'Spain'
-        elif pyautogui.locateOnScreen('assets/temp/spainALT.png', grayscale=False, confidence=0.99) != None:
-            map = 'SpainALT'
-        elif pyautogui.locateOnScreen('assets/temp/spainEC.png', grayscale=False, confidence=0.96) != None:
-            map = 'SpainEC'
-            ec = True
-            screenshot_val = True
-        elif pyautogui.locateOnScreen('assets/temp/golan_heights.png', grayscale=False, confidence=0.99) != None:
-            map = 'GolanHeights'
-        elif pyautogui.locateOnScreen('assets/temp/golan_heightsALT.png', grayscale=False, confidence=0.99) != None:
-            map = 'GolanHeightsALT'
-        elif pyautogui.locateOnScreen('assets/temp/sinai.png', grayscale=False, confidence=0.98) != None:
-            map = 'Sinai'
-        elif pyautogui.locateOnScreen('assets/temp/sinaiALT.png', grayscale=False, confidence=0.98) != None:
-            map = 'SinaiALT'
-        elif pyautogui.locateOnScreen('assets/temp/city.png', grayscale=False, confidence=0.97) != None:
-            map = 'City'
-            city = True
-        elif pyautogui.locateOnScreen('assets/temp/cityALT.png', grayscale=False, confidence=0.97) != None:
-            map = 'CityALT'
-            city = True
-        elif pyautogui.locateOnScreen('assets/temp/rocky_canyonALT.png', grayscale=False, confidence=0.97) != None:
-            map = 'RockyCanyonALT'
-            ec = True
-            screenshot_val = True
-        elif pyautogui.locateOnScreen('assets/temp/afghanistan.png', grayscale=False, confidence=0.97) != None:
+        map = ''
+        inc = 0
+        exception_flag = False
+        while map == '' and inc <= 5:
+            map_coords=get_map_info()
+            try:
+                map = MAPS[map_coords]
+                if map == 'City' or map == 'CityALT':
+                    city = True
+                elif map == 'VietnamEC' or map == 'SpainEC' or map == 'Afghanistan' or map == 'RockyCanyon' or map == 'RockyCanyonALT':
+                    ec = True
+                break
+            except:
+                print(f"exception: map_coords are {map_coords}")
+                exception_flag = True
+            if pyautogui.locateOnScreen('assets/temp/rocky_canyonALT.png', grayscale=False, confidence=0.97) != None:
+                map = 'RockyCanyonALT'
+                ec = True
+            inc += 1
+            time.sleep(0.5)
+        if map == '':
             ec = True
             map = 'RockyCanyonALT'
-        else:
-            ec = True
-            map = 'RockyCanyonALT'
-            screenshot_val = True
-        # Temp condition
-        if screenshot_val: 
-            screenshot_screen()
 
+        # Temp condition
+        if exception_flag:
+            screenshot_num = screenshot_screen()
+            with open("data/checker.txt", "a") as file:
+                file.write(f"\nInfo:{map_coords} : 'Screenshot #{screenshot_num}'")
+        print(f'CONSOLE: Map is {map}') 
         
         # In Battle, click the Spawn In button
         press(KEYBINDS['enter'])
-        print("CONSOLE: Spawn Button Clicked") 
+        print("CONSOLE: Spawn Button Clicked")
         time.sleep(1)
             
 
-        print(f'CONSOLE: Map is {map}')
-
         # Pitch values
-        pitch_value = 184
+        pitch_value = 245
         downVal = int(pitch_value/8)
 
         # Take off/spawn procedure
@@ -577,7 +601,7 @@ def bot():
         elif city:
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn In Airspawn')
-            wait_on('assets/temp/cancel_spawn.png', 0.7)
+            wait_on('assets/temp/cancel_spawn.png')
             # Afterburner
             press('w')
             # Start CCRP and choose base
@@ -657,14 +681,19 @@ def bot():
                     print('CONSOLE: Deploying Airbrake')
                     press(KEYBINDS['airbrake'])
                     pyautogui.scroll(-2)
+                    if aircraft in ["F-4F", "MiG-23BN"]:
+                        press(KEYBINDS['airbrake'])
+                        print('CONSOLE: Retracting Airbrake')
+                        mach_flag = True
                     brake_flag = True
 
             if pitch_flag and not brake_flag:
                 pitch_control(height, attitude[0], attitude[1])
             
+            
         # After Bombing pitch up, throttle down, and bait enemies
         time.sleep(1)
-        cruising_height = height + 1000
+        cruising_height = height + 1500
         if not mach_flag:
             press(KEYBINDS['airbrake'])
         brake_flag = False
@@ -769,60 +798,23 @@ def main():
         ip_address = get_ip_address()
 
         if ip_address:
-            # Connect to the MySQL database
-            try:
-                connection = mysql.connector.connect(
-                    host=os.getenv("DB_HOST"),
-                    user=os.getenv("DB_USER"),
-                    password=os.getenv("DB_PASSWORD"),
-                    database=os.getenv("DB_DATABASE"),
-                    auth_plugin=os.getenv("DB_AUTH_PLUGIN")
-                )
+            url = os.getenv('server_ip')
 
-                # Create a cursor object to interact with the database
-                cursor = connection.cursor()
+            # JSON payload for the request
+            payload = {
+                'users_key': key,
+                'users_ip': ip_address
+            }
 
-                # Prepare the SQL query to check for a matching entry
-                query = "SELECT * FROM users WHERE users_key = %s"
-                values = (key,)
+            response = requests.post(url, json=payload)
 
-                cursor.execute(query, values)
-
-                result = cursor.fetchone()
-
-                # Check if a matching entry was found
-                if result:
-                    # Get the user's IP address
-                    user_ip = result[1]  # Assuming `users_ip` is the second column in the table (index 1)
-
-                    # Compare the IP address with the provided one
-                    if user_ip == ip_address:
-                        cursor.close()
-                        connection.close()
-                        return True
-                    else:
-                        # Update the IP address in the database
-                        update_query = "UPDATE users SET users_ip = %s WHERE users_key = %s"
-                        update_values = (ip_address, key)
-                        cursor.execute(update_query, update_values)
-                        connection.commit()
-                        cursor.close()
-                        connection.close()
-                        return True
-                else:
-                    cursor.close()
-                    connection.close()
-                    return False
-
-
-
-            except mysql.connector.Error as error:
-                print("Error connecting to MySQL:", error)
+            if response.text == "True":
+                return True
+            return False
 
         else:
             print("Unable to retrieve the IP address.")
             return False
-
 
     def get_ip_address():
         # Create a socket object
@@ -837,14 +829,15 @@ def main():
         finally:
             sock.close()
 
-
     # Function to start the bot
     def start_bot():
         key = key_var.get()
-        if checkbox_var.get() and check_key(key):
+        global resolution
+        global aircraft
+        if checkbox_var.get() and check_key(key) and resolution is not None and aircraft is not None:
             # Prompt the user to Alt + Tab to War Thunder
             messagebox.showinfo("Alert", "Please Alt + Tab to War Thunder")
-
+            root.destroy()
             # Allow time for user to Alt + Tab
             time.sleep(5)
 
@@ -878,6 +871,10 @@ def main():
 
                     delete_temp_files()
                     end_program()
+        elif resolution is None:
+            messagebox.showinfo("Error", "Please Choose a Resolution")
+        elif aircraft is None:
+            messagebox.showinfo("Error", "Please Choose an Aircraft")
         elif not checkbox_var.get():
             # Checkbox is not checked, show an error message
             messagebox.showinfo("Error", "Please agree to use responsibly.")
@@ -885,8 +882,8 @@ def main():
             messagebox.showinfo("Error", "Incorrect Key")
 
     root.protocol("WM_DELETE_WINDOW", on_window_close)
-    root.geometry("800x600")
-    root.title("War Thunder Air Bot 0.9")
+    root.geometry("800x700")
+    root.title("War Thunder Air Bot 1.0")
 
     frame = ctk.CTkFrame(master=root)
     frame.pack(pady=20, padx=60, fill="both", expand=True)
@@ -895,19 +892,65 @@ def main():
     logo_label = ctk.CTkLabel(frame, text="", image=logo)
     logo_label.pack(pady=12, padx=10)
 
-    label = ctk.CTkLabel(master=frame, text="Nicks War Thunder Air Bot 0.9", font=("Roboto", 24))
+    label = ctk.CTkLabel(master=frame, text="Nicks War Thunder Air Bot 1.0", font=("Roboto", 24))
     label.pack(pady=12, padx=10)
 
     # Create the setup instructions label
     instructions_label = ctk.CTkLabel(master=frame,
-                                      text="Setup Instructions:\n1. Check the KeyBinds file and ensure that your keybinds are set up correctly\n2. Go to Hangar and have the Kfir Canard (Israel) selected\n3. Select 'Air Realistic Battles'\n\nTo end the program, press and hold 'q' at any time",
+                                      text="Setup Instructions:\n1. Check the KeyBinds file and ensure that your keybinds are set up correctly\n2. Go to Hangar and have the appropriate aircraft selected\n3. Select 'Air Realistic Battles'\n4. Ensure you are using Red and Blue default colors'\n\nTo end the program, press and hold 'q' at any time",
                                       font=("Roboto", 15))
     instructions_label.pack(pady=12, padx=10)
 
     key_entry = ctk.CTkEntry(master=frame, placeholder_text="Activation Key", show="*")
     key_entry.pack(pady=12, padx=10)
+
+    # Get key from .env
+    activation_key = os.getenv("activation_key")
+
+    if activation_key:
+        key_entry.insert(0, activation_key)
+
     # Bind the function to the text change event of the entry widget
     key_entry.bind("<KeyRelease>", update_key_var)
+
+    # Resolution drop down
+    resolution_var = ctk.StringVar(value="Select Resolution")  # set initial value
+
+    def choose_resolution(choice):
+        print("Resolution currently chosen is: ", choice)
+        resolutions = {
+            '1920x1080': 1080,
+            '2560x1440': 1440,
+            '3840x2160': 2160
+        }
+        global resolution
+        resolution = resolutions[choice]
+
+
+    resolution_box = ctk.CTkComboBox(master=frame,
+                                        values=["1920x1080", "2560x1440", "3840x2160"],
+                                        command=choose_resolution,
+                                        variable=resolution_var)
+    resolution_box.pack(padx=20, pady=10)
+
+    # Aircraft drop down
+    aircraft_var = ctk.StringVar(value="Select Aircraft")  # set initial value
+
+    def choose_aircraft(choice):
+        print("Aircraft Chosen: ", choice)
+        aircrafts = {
+            'Kfir Canard (IS)': 'Kfir',
+            'F-4F (GR)': 'F-4F',
+            'MiG-23BN (GR)': 'MiG-23BN'
+        }
+        global aircraft
+        aircraft = aircrafts[choice]
+
+    aircraft_box = ctk.CTkComboBox(master=frame,
+                                        values=["Kfir Canard (IS)", "F-4F (GR)", "MiG-23BN (GR)"],
+                                        command=choose_aircraft,
+                                        variable=aircraft_var)
+    aircraft_box.pack(padx=20, pady=10)
 
     start_button = ctk.CTkButton(master=frame, text="Start Bot", command=start_bot)
     start_button.pack(pady=12, padx=10)
