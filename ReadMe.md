@@ -31,7 +31,8 @@
    2. Set `Mouse Wheel (aircraft)` to `Throttle axis`.
    3. Set `Fire countermeasures` to `M.Wheel Down`(Mouse Wheel Down).
    4. Set `Set Mission Bombing Target` to your preferred CCRP keybind.
-   ####.
+      
+   ### Setting in game Visual Parameters
    1. Open Settings menu.
    2. In the `Battle Interface` tab, set all colors to default.
    3. In the`Air Battle Settings` tab, set HUD colors to default.
