@@ -9,7 +9,7 @@
    - F-4F (GR)
    - MiG-23BN (GR)
 
-   The list of supported resolutions are
+   The list of supported resolutions are:
    - 2560x1080 
    - 2560x1440
 
@@ -26,14 +26,25 @@
 
 ## Setup
 
-   ### Setting Keybinds
+   ### Setting in game Parameters
+   1. Open Controls menu.
+   2. Set `Mouse Wheel (aircraft)` to `Throttle axis`.
+   3. Set `Fire countermeasures` to `M.Wheel Down`(Mouse Wheel Down).
+   4. Set `Set Mission Bombing Target` to your preferred CCRP keybind.
+   
+   1. Open Settings menu.
+   2. In the `Battle Interface` tab, set all colors to default.
+   3. In the`Air Battle Settings` tab, set HUD colors to default.
+
+   ### Setting Program Keybinds
    1. Open the `data/keybinds.txt` file in a text editor.
    2. Review the default keybinds provided and modify them as needed to match your preferred settings in game.
    3. Save the `data/keybinds.txt` file.
-   4. Set throttle down to scroll wheel down in game.
-   5. CCRP is "Set Mission Bombing Target" within the game.
-   6. Ensure you have default colors.
 
+   ### Setting Up Auto Activation Key
+   1. Open the `.env` file in a text editor.
+   2. After the = on the line with `activation_key` paste in your activation key.
+   3. Save the `.env` file.
 
 ## Usage
 
