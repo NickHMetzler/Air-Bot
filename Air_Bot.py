@@ -237,7 +237,7 @@ def is_image_on_screen(image_path, grayscale=True, confidence=0.7):
         else:
             return False
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"CONSOLE: Error in is_image_on_screen(): {e}")
         return False
 
 # Wait on - Waiting on the image to leave
@@ -269,7 +269,7 @@ def get_location_data():
         try:
             return response.json()
         except json.decoder.JSONDecodeError as e:
-            print(f"Error decoding JSON: {e}")
+            print(f"CONSOLE: get_location_data() Error decoding JSON: {e}")
     return None
 
 # Find the enemy base location
@@ -280,7 +280,6 @@ def get_map_info():
         if field:
             field_x = round((field["sx"] + field["ex"]) / 2, 2)
             field_y = round((field["sy"] + field["ey"]) / 2, 2)
-            print(field_x, field_y)
             return field_x, field_y
         
 def get_spawn_info():
@@ -536,7 +535,7 @@ def bot():
                     ec = True
                 break
             except:
-                print(f"exception: map_coords are {map_coords}")
+                print(f"CONSOLE: Map not found; map_coords are {map_coords}")
                 exception_flag = True
             if pyautogui.locateOnScreen('assets/temp/rocky_canyonALT.png', grayscale=False, confidence=0.97) != None:
                 map = 'RockyCanyonALT'
@@ -813,7 +812,7 @@ def main():
             return False
 
         else:
-            print("Unable to retrieve the IP address.")
+            print("CONSOLE: Unable to retrieve the IP address")
             return False
 
     def get_ip_address():
@@ -867,7 +866,7 @@ def main():
 
                     # Format the time as HH:MM:SS
                     formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-                    print(f'Bot was running for: {formatted_time}')
+                    print(f'CONSOLE: Bot was running for: {formatted_time}')
 
                     delete_temp_files()
                     end_program()
@@ -897,7 +896,7 @@ def main():
 
     # Create the setup instructions label
     instructions_label = ctk.CTkLabel(master=frame,
-                                      text="Setup Instructions:\n1. Check the KeyBinds file and ensure that your keybinds are set up correctly\n2. Go to Hangar and have the appropriate aircraft selected\n3. Select 'Air Realistic Battles'\n4. Ensure you are using Red and Blue default colors'\n\nTo end the program, press and hold 'q' at any time",
+                                      text="Setup Instructions:\n1. Check the KeyBinds file and ensure that your keybinds are set up correctly\n2. Go to Hangar and have the appropriate aircraft selected\n3. Select 'Air Realistic Battles'\n4. Ensure you are using Red and Blue default colors\n\nTo end the program, press and hold 'q' at any time",
                                       font=("Roboto", 15))
     instructions_label.pack(pady=12, padx=10)
 
