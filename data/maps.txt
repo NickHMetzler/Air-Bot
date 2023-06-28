@@ -1,0 +1,20 @@
+{
+    (0.55, 0.87) : 'Afghanistan',
+    (0.78, 0.26) : 'GolanHeights',
+    (0.3, 0.84) : 'GolanHeightsALT',
+    (0.38, 0.06) : 'Sinai',
+    (0.44, 0.81) : 'SinaiALT',
+    (0.79, 0.47) : 'Spain',
+    (0.46, 0.73) : 'SpainALT',
+    (0.39, 0.89) : 'SpainEC',
+    (0.4, 0.18) : 'Vietnam',
+    (0.44, 0.94) : 'VietnamALT',
+    (0.56, 0.88) : 'VietnamEC',
+    (0.44, 0.1) : 'VietnamEC',
+    (0, 0) : 'RockyCanyon',
+    (0, 0) : 'RockyCanyonALT',
+    (0.19, 0.08) : 'City',
+    (0.54, 0.83) : 'CityALT',
+    (0.93, 0.25): 'Pyrenees',
+    (0.47, 0.83) : 'PyreneesALT'
+}
