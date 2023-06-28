@@ -790,6 +790,9 @@ def main():
     # Function to update the variable when the text changes
     def update_key_var(event):
         key_var.set(key_entry.get())
+    
+    def key_exists(key):
+        key_var.set(key)
 
 
     def check_key(key):
@@ -908,6 +911,7 @@ def main():
 
     if activation_key:
         key_entry.insert(0, activation_key)
+        key_exists(activation_key)
 
     # Bind the function to the text change event of the entry widget
     key_entry.bind("<KeyRelease>", update_key_var)
