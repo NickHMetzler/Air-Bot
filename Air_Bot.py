@@ -28,6 +28,10 @@ import os
 from cryptography.fernet import Fernet
 import io
 
+# Global Variables
+resolution = None
+aircraft = None
+
 # Allow the use of relative paths
 os.chdir(os.path.dirname(__file__))
 script_folder = os.path.dirname(__file__)
@@ -47,7 +51,6 @@ load_dotenv()
 
 # Get the decryption key from the environment variables
 decryption_key = os.getenv('decryption_key')
-
 # Char/Str to Scancode for Bot Game Inputs
 # https://kbdlayout.info/kbdusx/scancodes
 with open('data/keycodes.txt', 'r') as file:
@@ -143,6 +146,9 @@ def process_bin_folder(bin_folder):
                     f.write(png_data)
     finally:
         return
+
+# Process the bin folder# Temp Change to after selection
+process_bin_folder("assets/bin")
 
 ###############################
 #   C Struct Redefinitions    #
@@ -276,7 +282,16 @@ def get_map_info():
             field_y = round((field["sy"] + field["ey"]) / 2, 2)
             print(field_x, field_y)
             return field_x, field_y
-
+        
+def get_spawn_info():
+    json_data = get_location_data()
+    if json_data:
+        player = next((obj for obj in json_data if obj["icon"] == "Player"), None)
+        if player:
+            return True
+        else:
+            return False
+        
 # Calculate which base the plane is facing
 def calculate_ec_base():
     json_data = get_location_data()
@@ -326,7 +341,7 @@ def get_base_info(map, base, ec=False):
         points_sorted = sorted(set(points))
         if x is not None:
             if base_loc == [0, 0]:
-                if map in ['GolanHeightsALT', 'SpainALT', 'SinaiALT', 'VietnamALT', 'PyreneesALT']:
+                if map in ['GolanHeightsALT', 'SpainALT', 'SinaiALT', 'VietnamALT']:
                     index = 3
                 elif map == "CityALT":
                     index = 2
@@ -393,22 +408,32 @@ def get_mach():
 # Change the pitch of the plane based on height and RoC
 def pitch_control(target_height, curr_height, attitude):
     height_diff = curr_height - target_height
+
+    # Calculate the scaling factor based on the resolution
+    global resolution
+    scaling_factor = 1.0
+    if resolution == 1440:
+        scaling_factor = 1.333
+    elif resolution == 2160:
+        scaling_factor = 2.0
+
     if height_diff > 100 and attitude > 20.0:
-        move_mouse_by(0, 60)
+        move_mouse_by(0, int(60 * scaling_factor))
     elif height_diff < 0 and attitude < -20.0:
-        move_mouse_by(0, -60)
+        move_mouse_by(0, int(-60 * scaling_factor))
     elif height_diff > 100 and attitude > 10.0:
-        move_mouse_by(0, 30)
+        move_mouse_by(0, int(30 * scaling_factor))
     elif height_diff < 0 and attitude < -10.0:
-        move_mouse_by(0, -30)
+        move_mouse_by(0, int(-30 * scaling_factor))
     elif height_diff > 100 and attitude > 5.0:
-        move_mouse_by(0, 20)
+        move_mouse_by(0, int(20 * scaling_factor))
     elif height_diff < 0 and attitude < -5.0:
-        move_mouse_by(0, -20)
+        move_mouse_by(0, int(-20 * scaling_factor))
     elif height_diff > 25 and attitude > 0.0:
-        move_mouse_by(0, 7)
+        move_mouse_by(0, int(7 * scaling_factor))
     elif height_diff < 0 and attitude < 0.5:
-        move_mouse_by(0, -7)
+        move_mouse_by(0, int(-7 * scaling_factor))
+
 
 # Click mouse
 def click_mouse():
@@ -477,17 +502,12 @@ def delete_temp_files():
 
 # Bot Loop
 def bot():
-    # Process the bin folder
-    process_bin_folder("assets/bin")
+    global aircraft
     while True:
         # Click 'To Battle' Button in Main Menu
         while pyautogui.locateOnScreen('assets/temp/in_queue.png', grayscale=False, confidence=0.75) == None:
             # Check for battle trophy, to hangar button, and if the plane is repaired
-            if pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95) != None:
-                press(KEYBINDS['enter'])
-            if pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None:
-                press(KEYBINDS['enter'])
-            if pyautogui.locateOnScreen('assets/temp/repaired.png', grayscale=False, confidence=0.97) != None:
+            if pyautogui.locateOnScreen(f'assets/temp/{aircraft}_repaired.png', grayscale=False, confidence=0.97) != None or pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95) != None or pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None or pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None or pyautogui.locateOnScreen(f'assets/temp/invitation.png', grayscale=False, confidence=0.97) != None:
                 press(KEYBINDS['enter'])
             time.sleep(0.5)
 
@@ -495,7 +515,7 @@ def bot():
 
         # Wait to Join Battle
         print('CONSOLE: Waiting in Qeue...')
-        wait_for('assets/temp/spawn.png', grayscale=False, confidence=0.8)
+        wait_for('assets/temp/spawn.png', grayscale=False, confidence=0.7)
         print('CONSOLE: In Spawn Screen')
         
         # Check which map match is taking place on
@@ -538,9 +558,10 @@ def bot():
         press(KEYBINDS['enter'])
         print("CONSOLE: Spawn Button Clicked")
         time.sleep(1)
+            
 
         # Pitch values
-        pitch_value = 184
+        pitch_value = 245
         downVal = int(pitch_value/8)
 
         # Take off/spawn procedure
@@ -548,13 +569,11 @@ def bot():
         if not city:
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn on Airfield')
-            wait_on('assets/temp/cancel_spawn.png', True, 0.65)
+            wait_on('assets/temp/cancel_spawn.png')
             print('CONSOLE: Spawned in')
             # Throttle up, then pitch up
             holdFor(KEYBINDS['throttleUp'], 4)
             move_mouse_by(0, -pitch_value)
-            # Temp, replace with actual val
-            press('f12')
         
             # Start CCRP and choose base
             print('CONSOLE: Activating CCRP')
@@ -571,8 +590,6 @@ def bot():
             # Choose base target
             print('CONSOLE: Choosing Target Base')
             press(KEYBINDS['ccrp'])
-
-            # Wait until the centreline is spotted, or the height is half the target height
             while pyautogui.locateOnScreen('assets/temp/centreline.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.95) == None and height < HEIGHTS[map]/2:
                 height = get_attitude()[0]
                 time.sleep(0.1)
@@ -580,16 +597,14 @@ def bot():
             for i in range(3):
                     move_mouse_by(0, downVal + 5)
                     time.sleep(1)
-        # Air Spawn Procedure
+        # Air Spawn
         elif city:
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn In Airspawn')
-            wait_on('assets/temp/cancel_spawn.png', 0.7)
+            wait_on('assets/temp/cancel_spawn.png')
             # Afterburner
             press('w')
             # Start CCRP and choose base
-            # Temp, replace with actual var
-            press('f12')
             time.sleep(5)
             print('CONSOLE: Activating CCRP')
             press(KEYBINDS['ccrp'])
@@ -616,12 +631,8 @@ def bot():
 
         # Bombing loop
         while pyautogui.locateOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.95) == None:
-            
-            # Get the base info
+
             base_info = get_base_info(map, base_loc)
-            if map == 'Pyrenees':
-                print(f'Base info is {base_info}')    
-            # Aim plane towards the base
             centreline_location = pyautogui.locateOnScreen('assets/temp/centreline.png', grayscale=False, confidence=0.7)
             if centreline_location:
                 center_x, center_y = pyautogui.center(centreline_location)
@@ -631,70 +642,64 @@ def bot():
                 
                 distance_x = int((center_x - screen_center_x) / 2)
                 move_mouse_by(distance_x, 0)
-            # Base passed, release bombing button
             elif brake_flag and base_info[1] > last_dist:
                 release(KEYBINDS['bomb'])
                 break
-            # Move mouse towards base if no centreline
             elif base_info and pitch_flag and not brake_flag:
                 move_mouse_by(int(base_info[0] * 10), 0)
             last_dist = base_info[1]
 
-            # Zoom in after 6 cycles
             if zoom_time >= 6 and not zoom_flag:
                 press(KEYBINDS['zoom'])
                 zoom_flag = True
-            # Calculate which base plane is facing
             elif zoom_time == 10 and ec:
                 base_loc = calculate_ec_base()
             zoom_time += 1
 
-            # Pop flares when subsonic
             if brake_flag:
                 print('CONSOLE: Popping Flares')
                 pyautogui.scroll(-2)
-            
-            # Retract airbrake when under mach 1
+                pyautogui.scroll(2)
+
             if brake_flag and not mach_flag:
                 mach = get_mach()
                 if mach < 1.0:
                     print('CONSOLE: Retracting Airbrake')
+                    press(KEYBINDS['airbrake'])
                     mach_flag = True
 
-            # Climb ended, pitch down
             attitude = get_attitude()
-            if not city and not pitch_flag and attitude[0] > height - 30:
+            if not city and not pitch_flag and attitude[0] > height - 10:
                 move_mouse_by(0, downVal + 5)
                 move_mouse_by(0, downVal + 5)
                 time.sleep(1)
                 pitch_flag = True
 
-            # Kil lafterburner and deploy airbrake when close enough to base
             if base_info and zoom_time != 11:
                 base_loc = base_info[2]
                 if not brake_flag and base_info[1] <= map_distance:
                     print('CONSOLE: Deploying Airbrake')
+                    press(KEYBINDS['airbrake'])
                     pyautogui.scroll(-2)
-                    press(KEYBINDS['airbrake'])
-                    time.sleep(1)
-                    press(KEYBINDS['airbrake'])
+                    if aircraft in ["F-4F", "MiG-23BN"]:
+                        press(KEYBINDS['airbrake'])
+                        print('CONSOLE: Retracting Airbrake')
+                        mach_flag = True
                     brake_flag = True
 
-            # Maintain height
             if pitch_flag and not brake_flag:
                 pitch_control(height, attitude[0], attitude[1])
-
-            if base_info:
-                print(f'CONSOLE: Base is {base_info[1]} distance away')
+            
             
         # After Bombing pitch up, throttle down, and bait enemies
         time.sleep(1)
-        cruising_height = height + 1000
+        cruising_height = height + 1500
+        if not mach_flag:
+            press(KEYBINDS['airbrake'])
         brake_flag = False
         press(KEYBINDS['smoke'])
         time.sleep(1)
-        
-        # Aim towards base until dead
+        # Turn right until dead
         while pyautogui.locateOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.95) == None:
             attitude = get_attitude()
             field_data = get_field_info()
@@ -811,7 +816,6 @@ def main():
             print("Unable to retrieve the IP address.")
             return False
 
-
     def get_ip_address():
         # Create a socket object
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -825,14 +829,15 @@ def main():
         finally:
             sock.close()
 
-
     # Function to start the bot
     def start_bot():
         key = key_var.get()
-        if checkbox_var.get() and check_key(key):
+        global resolution
+        global aircraft
+        if checkbox_var.get() and check_key(key) and resolution is not None and aircraft is not None:
             # Prompt the user to Alt + Tab to War Thunder
             messagebox.showinfo("Alert", "Please Alt + Tab to War Thunder")
-
+            root.destroy()
             # Allow time for user to Alt + Tab
             time.sleep(5)
 
@@ -866,6 +871,10 @@ def main():
 
                     delete_temp_files()
                     end_program()
+        elif resolution is None:
+            messagebox.showinfo("Error", "Please Choose a Resolution")
+        elif aircraft is None:
+            messagebox.showinfo("Error", "Please Choose an Aircraft")
         elif not checkbox_var.get():
             # Checkbox is not checked, show an error message
             messagebox.showinfo("Error", "Please agree to use responsibly.")
@@ -873,8 +882,8 @@ def main():
             messagebox.showinfo("Error", "Incorrect Key")
 
     root.protocol("WM_DELETE_WINDOW", on_window_close)
-    root.geometry("800x600")
-    root.title("War Thunder Air Bot 0.9")
+    root.geometry("800x700")
+    root.title("War Thunder Air Bot 1.0")
 
     frame = ctk.CTkFrame(master=root)
     frame.pack(pady=20, padx=60, fill="both", expand=True)
@@ -883,19 +892,65 @@ def main():
     logo_label = ctk.CTkLabel(frame, text="", image=logo)
     logo_label.pack(pady=12, padx=10)
 
-    label = ctk.CTkLabel(master=frame, text="Nicks War Thunder Air Bot 0.9", font=("Roboto", 24))
+    label = ctk.CTkLabel(master=frame, text="Nicks War Thunder Air Bot 1.0", font=("Roboto", 24))
     label.pack(pady=12, padx=10)
 
     # Create the setup instructions label
     instructions_label = ctk.CTkLabel(master=frame,
-                                      text="Setup Instructions:\n1. Check the KeyBinds file and ensure that your keybinds are set up correctly\n2. Go to Hangar and have the Kfir Canard (Israel) selected\n3. Select 'Air Realistic Battles'\n\nTo end the program, press and hold 'q' at any time",
+                                      text="Setup Instructions:\n1. Check the KeyBinds file and ensure that your keybinds are set up correctly\n2. Go to Hangar and have the appropriate aircraft selected\n3. Select 'Air Realistic Battles'\n4. Ensure you are using Red and Blue default colors'\n\nTo end the program, press and hold 'q' at any time",
                                       font=("Roboto", 15))
     instructions_label.pack(pady=12, padx=10)
 
     key_entry = ctk.CTkEntry(master=frame, placeholder_text="Activation Key", show="*")
     key_entry.pack(pady=12, padx=10)
+
+    # Get key from .env
+    activation_key = os.getenv("activation_key")
+
+    if activation_key:
+        key_entry.insert(0, activation_key)
+
     # Bind the function to the text change event of the entry widget
     key_entry.bind("<KeyRelease>", update_key_var)
+
+    # Resolution drop down
+    resolution_var = ctk.StringVar(value="Select Resolution")  # set initial value
+
+    def choose_resolution(choice):
+        print("Resolution currently chosen is: ", choice)
+        resolutions = {
+            '1920x1080': 1080,
+            '2560x1440': 1440,
+            '3840x2160': 2160
+        }
+        global resolution
+        resolution = resolutions[choice]
+
+
+    resolution_box = ctk.CTkComboBox(master=frame,
+                                        values=["1920x1080", "2560x1440", "3840x2160"],
+                                        command=choose_resolution,
+                                        variable=resolution_var)
+    resolution_box.pack(padx=20, pady=10)
+
+    # Aircraft drop down
+    aircraft_var = ctk.StringVar(value="Select Aircraft")  # set initial value
+
+    def choose_aircraft(choice):
+        print("Aircraft Chosen: ", choice)
+        aircrafts = {
+            'Kfir Canard (IS)': 'Kfir',
+            'F-4F (GR)': 'F-4F',
+            'MiG-23BN (GR)': 'MiG-23BN'
+        }
+        global aircraft
+        aircraft = aircrafts[choice]
+
+    aircraft_box = ctk.CTkComboBox(master=frame,
+                                        values=["Kfir Canard (IS)", "F-4F (GR)", "MiG-23BN (GR)"],
+                                        command=choose_aircraft,
+                                        variable=aircraft_var)
+    aircraft_box.pack(padx=20, pady=10)
 
     start_button = ctk.CTkButton(master=frame, text="Start Bot", command=start_bot)
     start_button.pack(pady=12, padx=10)
