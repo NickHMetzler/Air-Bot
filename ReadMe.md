@@ -51,7 +51,7 @@
    2. After the = on the line with `activation_key` paste in your activation key.
    3. Save the `.env` file.
 
-   ###Keybind equivalents keybinds.txt vs in game
+   ### Keybind equivalents keybinds.txt vs in game
    - Keybind `bomb` in game is `Drop bomb series`.
    - Keybind `ccrp` in game is `Set Mission Bombing Target`.
    - Keybind `radar` in game is `Switch Radar/IRST search on/off`.
