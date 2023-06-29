@@ -602,7 +602,8 @@ def bot():
             print('CONSOLE: Waiting to Spawn In Airspawn')
             wait_on('assets/temp/cancel_spawn.png')
             # Afterburner
-            press('w')
+            press(KEYBINDS['throttleUp'])
+            press(KEYBINDS['radar'])
             # Start CCRP and choose base
             time.sleep(5)
             print('CONSOLE: Activating CCRP')
