@@ -32,7 +32,7 @@
    3. Set `Fire countermeasures` to `M.Wheel Down`(Mouse Wheel Down).
    4. Set `Set Mission Bombing Target` to your preferred CCRP keybind.
    5. Set `Switch Radar/IRST search on/off` to your preferred Radar keybind.
-   6. Set `Drop bomb series` to your preferred Radar keybind.
+   6. Set `Drop bomb series` to your preferred bombing keybind.
       
    ### Setting in game Visual Parameters
    1. Open Settings menu.
@@ -55,6 +55,7 @@
    - Keybind `bomb` in game is `Drop bomb series`.
    - Keybind `ccrp` in game is `Set Mission Bombing Target`.
    - Keybind `radar` in game is `Switch Radar/IRST search on/off`.
+     
 ## Usage
 
    1. Run the `Air_Bot.py` as Administrator to avoid any errors.
