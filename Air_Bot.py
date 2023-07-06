@@ -127,7 +127,13 @@ def convert_to_png(data):
 # Convert all bin files to png
 def process_bin_folder(bin_folder):
     temp_dir = r"assets\temp"
-
+    # Check if the directory exists
+    if not os.path.exists(temp_dir):
+        # Create the directory
+        os.makedirs(temp_dir)
+        print("Directory created:", temp_dir)
+    else:
+        print("Directory already exists:", temp_dir)
     try:
         # Iterate over the binary files in the folder
         for filename in os.listdir(bin_folder):
@@ -577,7 +583,7 @@ def bot():
         while pyautogui.locateOnScreen('assets/temp/in_queue.png', grayscale=False, confidence=0.75) == None:
             waiting_for = get_elapsed_time(start_loop)
             if waiting_for > 600:
-                press(KEYBINDS['esc'])
+                press('esc')
             # Check for battle trophy, to hangar button, and if the plane is repaired
             elif pyautogui.locateOnScreen(f'assets/temp/{aircraft}_repaired.png', grayscale=False, confidence=0.97) != None or pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95) != None or pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None or pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None or pyautogui.locateOnScreen(f'assets/temp/invitation.png', grayscale=False, confidence=0.97) != None:
                 press(KEYBINDS['enter'])
@@ -668,7 +674,7 @@ def bot():
         elif city:
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn In Airspawn')
-            wait_on('assets/temp/cancel_spawn.png')
+            wait_on('assets/temp/cancel_spawn.png', True, 0.85)
             # Afterburner
             press(KEYBINDS['throttleUp'])
             press(KEYBINDS['radar'])
@@ -767,6 +773,7 @@ def bot():
             press(KEYBINDS['airbrake'])
         brake_flag = False
         press(KEYBINDS['smoke'])
+        move_mouse_by(0, -200)
         time.sleep(1)
         # Turn right until dead
         while game_over() == False:
@@ -793,17 +800,20 @@ def bot():
             time.sleep(4)
             # Click 'Return To Hangar' Button
             wait_for('assets/temp/return_to_hangar.png', False, 0.85)
+            print('CONSOLE: Found Return To Hangar')
             while pyautogui.locateCenterOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.85) != None:
                 move_mouse_to_image('assets/temp/return_to_hangar.png')
                 click_mouse()
                 move_mouse_to(100, 100)
                 time.sleep(3)
             
-            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.9) == None or pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) == None:
+            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) == None:
                 if pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95) != None:
                     press(KEYBINDS['enter'])
+                print('CONSOLE: Waiting For To Hangar')
             # Click 'To Hangar' Button
             while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None or pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) != None:
+                print('CONSOLE: Finding/Clicking To Hangar')
                 if pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None:
                     move_mouse_to_image('assets/temp/to_hangar.png')
                     click_mouse()
@@ -827,11 +837,13 @@ def bot():
                 time.sleep(3)
 
             # Wait for 'To Hangar' Button or OK Button
-            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) == None and pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) == None:
+            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) == None:
+                print('CONSOLE: Waiting on To Hangar')
                 if pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.85) != None:
                     press(KEYBINDS['enter'])
             # Click 'To Hangar' Button
             while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None or pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) != None:
+                print('CONSOLE: Finding/Clicking To Hangar')
                 if pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None:
                     move_mouse_to_image('assets/temp/to_hangar.png')
                     click_mouse()
