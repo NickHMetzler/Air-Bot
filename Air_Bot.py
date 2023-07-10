@@ -131,9 +131,9 @@ def process_bin_folder(bin_folder):
     if not os.path.exists(temp_dir):
         # Create the directory
         os.makedirs(temp_dir)
-        print("Directory created:", temp_dir)
+        print("CONSOLE: Creating Temp Folder...")
     else:
-        print("Directory already exists:", temp_dir)
+        print("CONSOLE: Temp Folder Found")
     try:
         # Iterate over the binary files in the folder
         for filename in os.listdir(bin_folder):
@@ -494,65 +494,48 @@ def holdFor(key, seconds):
 #########################
 
 def researched_mod():
-    if pyautogui.locateOnScreen('assets/temp/hangar_ok.png', grayscale=False, confidence=0.7) != None:
-        print('Found OK')
-        while pyautogui.locateOnScreen('assets/temp/hangar_ok.png', grayscale=False, confidence=0.7) != None:
-            move_mouse_to_image('assets/temp/hangar_ok.png')
+    if pyautogui.locateOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.7) != None:
+        print('CONSOLE: researched_mod(): Found OK')
+        while pyautogui.locateOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.7) != None:
+            move_mouse_to_image('assets/temp/ok.png')
             click_mouse()
-            print("Trying to click OK")
+            print("CONSOLE: researched_mod(): Trying to click OK")
             time.sleep(0.5)
     else:
-        print('Did not find OK')
-
-    if pyautogui.locateOnScreen('assets/temp/research_mod.png', grayscale=False, confidence=0.7) != None:
-        print('Found spend')
-        while pyautogui.locateOnScreen('assets/temp/research_mod.png', grayscale=False, confidence=0.7) != None:
-            move_mouse_to_image('assets/temp/research_mod.png')
-            click_mouse()
-            print("Trying to click spend")
-            time.sleep(0.5)
-    else:
-        print('Did not find spend')
-
-    if pyautogui.locateOnScreen('assets/temp/all_mods.png', grayscale=False, confidence=0.7) != None:
-        print('Found all_mods')
-        while pyautogui.locateOnScreen('assets/temp/all_mods.png', grayscale=False, confidence=0.7) != None:
-            move_mouse_to_image('assets/temp/all_mods.png')
-            click_mouse()
-            print("Trying to click all_mods")
-            time.sleep(0.5)
-    else:
-        print('Did not find all_mods')
+        print('CONSOLE: researched_mod(): Did not find OK')
+    
+    time.sleep(4)
 
     if pyautogui.locateOnScreen('assets/temp/finish.png', grayscale=False, confidence=0.7) != None:
-        print('FoundFinish')
+        print('CONSOLE: researched_mod(): Found Finish')
         while pyautogui.locateOnScreen('assets/temp/finish.png', grayscale=False, confidence=0.7) != None:
             move_mouse_to_image('assets/temp/finish.png')
             click_mouse()
-            print("Trying to click Finish")
+            print("CONSOLE: researched_mod(): Trying to click Finish")
+            time.sleep(0.5)
+    elif pyautogui.locateOnScreen('assets/temp/spend.png', grayscale=False, confidence=0.7) != None:
+        print('CONSOLE: researched_mod(): Found Spend')
+        while pyautogui.locateOnScreen('assets/temp/spend.png', grayscale=False, confidence=0.7) != None:
+            move_mouse_to_image('assets/temp/finish.png')
+            click_mouse()
+            print("CONSOLE: researched_mod(): Trying to click Spend")
             time.sleep(0.5)
     else:
-        print('Did not find Finish')
+        print('CONSOLE: researched_mod(): Did not find Finish or Spend')
+        return False
 
-
-def researched_plane():
-    if pyautogui.locateOnScreen('ok.png', grayscale=False, confidence=0.7) != None:
-        print('Found OK')
-        while pyautogui.locateOnScreen('ok.png', grayscale=False, confidence=0.7) != None:
-            move_mouse_to_image('ok.png')
-            click_mouse()
-            print("Trying to click OK")
-            time.sleep(0.5)
     time.sleep(4)
-    if pyautogui.locateOnScreen('order.png', grayscale=False, confidence=0.7) != None:
-        print('Found Order')
-        while pyautogui.locateOnScreen('order.png', grayscale=False, confidence=0.7) != None:
-            press('esc')
-            print("Trying to click Escape")
+
+    if pyautogui.locateOnScreen('assets/temp/all_mods.png', grayscale=False, confidence=0.7) != None:
+        print('CONSOLE: researched_mod(): Found all_mods')
+        while pyautogui.locateOnScreen('assets/temp/all_mods.png', grayscale=False, confidence=0.7) != None:
+            move_mouse_to_image('assets/temp/all_mods.png')
+            click_mouse()
+            print("CONSOLE: researched_mod(): Trying to click all_mods")
             time.sleep(0.5)
-        time.sleep(2)
-        press('esc')
-    print('Done Research')
+    else:
+        print('CONSOLE: researched_mod(): Did not find all_mods')
+
 
 # End Program
 def end_program():
@@ -582,7 +565,7 @@ def bot():
         # Click 'To Battle' Button in Main Menu
         while pyautogui.locateOnScreen('assets/temp/in_queue.png', grayscale=False, confidence=0.75) == None:
             waiting_for = get_elapsed_time(start_loop)
-            if waiting_for > 600:
+            if waiting_for > 600 or pyautogui.locateOnScreen(f'assets/temp/invite.png', grayscale=False, confidence=0.97) != None:
                 press('esc')
             # Check for battle trophy, to hangar button, and if the plane is repaired
             elif pyautogui.locateOnScreen(f'assets/temp/{aircraft}_repaired.png', grayscale=False, confidence=0.97) != None or pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95) != None or pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None or pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None or pyautogui.locateOnScreen(f'assets/temp/invitation.png', grayscale=False, confidence=0.97) != None:
@@ -639,7 +622,7 @@ def bot():
 
         # Take off/spawn procedure
         battle_time = time.time()
-        if not city:
+        if not city and aircraft != 'F-84F':
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn on Airfield')
             wait_on('assets/temp/cancel_spawn.png', True, 0.85)
@@ -671,11 +654,13 @@ def bot():
                     move_mouse_by(0, downVal + 5)
                     time.sleep(1)
         # Air Spawn
-        elif city:
+        else:
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn In Airspawn')
             wait_on('assets/temp/cancel_spawn.png', True, 0.85)
             # Afterburner
+            if aircraft == 'F-84-F':
+                time.sleep(4)
             press(KEYBINDS['throttleUp'])
             press(KEYBINDS['radar'])
             # Start CCRP and choose base
@@ -699,6 +684,9 @@ def bot():
         mach_flag = False
         map_distance = DISTANCES[map]
         height = HEIGHTS[map]
+        if aircraft == 'F-84F':
+            height += 400
+        
         
         # Hold down the bombing button
         hold(KEYBINDS['bomb'])
@@ -753,8 +741,11 @@ def bot():
             if base_info and zoom_time != 11:
                 base_loc = base_info[2]
                 if not brake_flag and base_info[1] <= map_distance:
-                    print('CONSOLE: Deploying Airbrake')
-                    press(KEYBINDS['airbrake'])
+                    if aircraft != 'F-84F':
+                        print('CONSOLE: Deploying Airbrake')
+                        press(KEYBINDS['airbrake'])
+                    else:
+                        mach_flag = True
                     pyautogui.scroll(-2)
                     if aircraft in ["F-4F", "MiG-23BN"]:
                         press(KEYBINDS['airbrake'])
@@ -783,7 +774,7 @@ def bot():
                 pitch_control(cruising_height, attitude[0], attitude[1])
             if field_data is not None:
                 move_mouse_by(int(field_data[0] * 10), 0)
-                if field_data[1] <= 0.065 and not brake_flag:
+                if field_data[1] <= 0.085 and not brake_flag:
                     press(KEYBINDS['airbrake'])
                     if attitude[0] >= 2000:
                         move_mouse_by(0, int(attitude[0]/12))
@@ -845,30 +836,46 @@ def bot():
             while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None or pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) != None:
                 print('CONSOLE: Finding/Clicking To Hangar')
                 if pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None:
+                    print('CONSOLE: Found To Hangar')
                     move_mouse_to_image('assets/temp/to_hangar.png')
                     click_mouse()
                     move_mouse_to(100, 100)
                 elif pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) != None:
-                    press('esc')
-                    time.sleep(4)
-                    press('esc')
-                    time.sleep(4)
-                    press('esc')
-                    print('CONSOLE: Ran Research BUDDAY')
+                    print('CONSOLE: Found OK After Match')
+                    mod = researched_mod()
+                    if mod == False:
+                        press('esc')
+                        time.sleep(4)
+                        press('esc')
+                        time.sleep(4)
+                        press('esc')
                 time.sleep(3)
 
         # Match has ended
         else:
             print('CONSOLE: Match Ended, Returning to Hangar')
-            # Wait for 'To Hangar' Button
-            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) == None:
+            # Wait for 'To Hangar' Button or OK Button
+            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) == None:
+                print('CONSOLE: Waiting on To Hangar')
                 if pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.85) != None:
                     press(KEYBINDS['enter'])
             # Click 'To Hangar' Button
-            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None:
-                move_mouse_to_image('assets/temp/to_hangar.png')
-                click_mouse()
-                move_mouse_to(100, 100)
+            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None or pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) != None:
+                print('CONSOLE: Finding/Clicking To Hangar')
+                if pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None:
+                    print('Found To Hangaar the first toime')
+                    move_mouse_to_image('assets/temp/to_hangar.png')
+                    click_mouse()
+                    move_mouse_to(100, 100)
+                elif pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) != None:
+                    print('Found OK the first toime')
+                    mod = researched_mod()
+                    if mod == False:
+                        press('esc')
+                        time.sleep(4)
+                        press('esc')
+                        time.sleep(4)
+                        press('esc')
                 time.sleep(3)
 
 # Main function
@@ -1028,8 +1035,9 @@ def main():
         resolution = resolutions[choice]
 
 
+    #4K = "3840x2160"
     resolution_box = ctk.CTkComboBox(master=frame,
-                                        values=["1920x1080", "2560x1440", "3840x2160"],
+                                        values=["2560x1080", "2560x1440"],
                                         command=choose_resolution,
                                         variable=resolution_var)
     resolution_box.pack(padx=20, pady=10)
@@ -1042,13 +1050,15 @@ def main():
         aircrafts = {
             'Kfir Canard (IS)': 'Kfir',
             'F-4F (GR)': 'F-4F',
-            'MiG-23BN (GR)': 'MiG-23BN'
+            'MiG-23BN (GR)': 'MiG-23BN',
+            'Mirage 5F (FR)' : 'Mirage-5F',
+            'F-84F (FR)' : 'F-84F'
         }
         global aircraft
         aircraft = aircrafts[choice]
 
     aircraft_box = ctk.CTkComboBox(master=frame,
-                                        values=["Kfir Canard (IS)", "F-4F (GR)", "MiG-23BN (GR)"],
+                                        values=["Kfir Canard (IS)", "F-4F (GR)", "MiG-23BN (GR)", "Mirage 5F (FR)", "F-84F (FR)"],
                                         command=choose_aircraft,
                                         variable=aircraft_var)
     aircraft_box.pack(padx=20, pady=10)
