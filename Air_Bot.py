@@ -427,16 +427,28 @@ def pitch_control(target_height, curr_height, attitude):
     elif resolution == 2160:
         scaling_factor = 2.0
 
-    if height_diff > 100 and attitude > 20.0:
+    if height_diff > 1000 and attitude > 20.0:
+        move_mouse_by(0, int(90 * scaling_factor))
+    elif height_diff > 1000 and attitude > 10.0:
         move_mouse_by(0, int(60 * scaling_factor))
-    elif height_diff < 0 and attitude < -20.0:
-        move_mouse_by(0, int(-60 * scaling_factor))
+    elif height_diff > 1000 and attitude > 5.0:
+        move_mouse_by(0, int(30 * scaling_factor))
+    elif height_diff > 1000 and attitude > -5.0:
+        move_mouse_by(0, int(30 * scaling_factor))
+    elif height_diff > 1000 and attitude > -10.0:
+        move_mouse_by(0, int(10 * scaling_factor))
+    elif height_diff > 100 and attitude > 20.0:
+        move_mouse_by(0, int(60 * scaling_factor))
     elif height_diff > 100 and attitude > 10.0:
         move_mouse_by(0, int(30 * scaling_factor))
-    elif height_diff < 0 and attitude < -10.0:
-        move_mouse_by(0, int(-30 * scaling_factor))
     elif height_diff > 100 and attitude > 5.0:
         move_mouse_by(0, int(20 * scaling_factor))
+    elif height_diff < 0 and attitude < -25.0:
+        move_mouse_by(0, int(-90 * scaling_factor))
+    elif height_diff < 0 and attitude < -20.0:
+        move_mouse_by(0, int(-60 * scaling_factor))
+    elif height_diff < 0 and attitude < -10.0:
+        move_mouse_by(0, int(-30 * scaling_factor))
     elif height_diff < 0 and attitude < -5.0:
         move_mouse_by(0, int(-20 * scaling_factor))
     elif height_diff > 25 and attitude > 0.0:
@@ -493,6 +505,7 @@ def holdFor(key, seconds):
 #   General Functions   #
 #########################
 
+# Research another modification
 def researched_mod():
     if pyautogui.locateOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.7) != None:
         print('CONSOLE: researched_mod(): Found OK')
@@ -506,6 +519,7 @@ def researched_mod():
     
     time.sleep(4)
 
+    # If these are false, it is a new Aircraft
     if pyautogui.locateOnScreen('assets/temp/finish.png', grayscale=False, confidence=0.7) != None:
         print('CONSOLE: researched_mod(): Found Finish')
         while pyautogui.locateOnScreen('assets/temp/finish.png', grayscale=False, confidence=0.7) != None:
@@ -526,6 +540,7 @@ def researched_mod():
 
     time.sleep(4)
 
+    # All modifications in a row are researched
     if pyautogui.locateOnScreen('assets/temp/all_mods.png', grayscale=False, confidence=0.7) != None:
         print('CONSOLE: researched_mod(): Found all_mods')
         while pyautogui.locateOnScreen('assets/temp/all_mods.png', grayscale=False, confidence=0.7) != None:
@@ -535,7 +550,6 @@ def researched_mod():
             time.sleep(0.5)
     else:
         print('CONSOLE: researched_mod(): Did not find all_mods')
-
 
 # End Program
 def end_program():
@@ -556,21 +570,32 @@ def delete_temp_files():
 
 # Bot Loop
 def bot():
-    # Process the bin folder
-    global resolution
-    process_bin_folder(f"assets/bin/{resolution}")
     global aircraft
+    global resolution
+    global mode
+    # Process the bin folder
+    process_bin_folder(f"assets/bin/{resolution}")
+    # Bot loop
     while True:
         start_loop = time.time()
-        # Click 'To Battle' Button in Main Menu
-        while pyautogui.locateOnScreen('assets/temp/in_queue.png', grayscale=False, confidence=0.75) == None:
+        while True:
+            in_queue = pyautogui.locateOnScreen('assets/temp/in_queue.png', grayscale=False, confidence=0.95)
+            if in_queue is not None:
+                break
+
+            invite = pyautogui.locateOnScreen(f'assets/temp/invite.png', grayscale=False, confidence=0.97)
+            repaired = pyautogui.locateOnScreen(f'assets/temp/{aircraft}_repaired.png', grayscale=False, confidence=0.97)
+            trophy = pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95)
+            to_hangar = pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85)
+
             waiting_for = get_elapsed_time(start_loop)
-            if waiting_for > 600 or pyautogui.locateOnScreen(f'assets/temp/invite.png', grayscale=False, confidence=0.97) != None:
+            if waiting_for > 600 or invite is not None:
                 press('esc')
-            # Check for battle trophy, to hangar button, and if the plane is repaired
-            elif pyautogui.locateOnScreen(f'assets/temp/{aircraft}_repaired.png', grayscale=False, confidence=0.97) != None or pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95) != None or pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None or pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None or pyautogui.locateOnScreen(f'assets/temp/invitation.png', grayscale=False, confidence=0.97) != None:
+
+            if repaired is not None or trophy is not None or to_hangar is not None:
                 press(KEYBINDS['enter'])
-            time.sleep(0.5)
+
+            time.sleep(0.1)  # Adjust the sleep duration as needed
 
         print("\n\nCONSOLE: To Battle!")
 
@@ -579,14 +604,14 @@ def bot():
         wait_for('assets/temp/spawn.png', grayscale=False, confidence=0.7)
         print('CONSOLE: In Spawn Screen')
         
-        # Check which map match is taking place on
+        # Initialize variables
         move_mouse_to(100, 100)
-        # Temp Variable
         city = False
         ec = False
         map = ''
         inc = 0
         exception_flag = False
+        # Check which map match is taking place on
         while inc <= 5:
             map_coords=get_map_info()
             try:
@@ -603,11 +628,13 @@ def bot():
                 ec = True
             inc += 1
             time.sleep(0.5)
-        # Temp condition
+        
+        # Record screenshot and coordinates for unknown map
         if exception_flag:
             screenshot_num = screenshot_screen()
             with open("data/checker.txt", "a") as file:
                 file.write(f"\nInfo:{map_coords} : 'Screenshot #{screenshot_num}'")
+            
         print(f'CONSOLE: Map is {map}') 
         
         # In Battle, click the Spawn In button
@@ -615,7 +642,6 @@ def bot():
         print("CONSOLE: Spawn Button Clicked")
         time.sleep(1)
             
-
         # Pitch values
         pitch_value = 245
         downVal = int(pitch_value/8)
@@ -627,22 +653,24 @@ def bot():
             print('CONSOLE: Waiting to Spawn on Airfield')
             wait_on('assets/temp/cancel_spawn.png', True, 0.85)
             print('CONSOLE: Spawned in')
+
             # Throttle up, then pitch up
             holdFor(KEYBINDS['throttleUp'], 4)
             move_mouse_by(0, -pitch_value)
             press(KEYBINDS['radar'])
+
             # Start CCRP and choose base
             print('CONSOLE: Activating CCRP')
             press(KEYBINDS['ccrp'])
 
             # Retract gear when taken off
             ground = get_attitude()[0]
-            height = get_attitude()[0]
+            height = ground
             while height <= ground + 10:
                 height = get_attitude()[0]
             print('CONSOLE: Retracting Landing Gear')
             press(KEYBINDS['gear'])
-
+            
             # Choose base target
             print('CONSOLE: Choosing Target Base')
             press(KEYBINDS['ccrp'])
@@ -653,8 +681,9 @@ def bot():
             for i in range(3):
                     move_mouse_by(0, downVal + 5)
                     time.sleep(1)
+
         # Air Spawn
-        else:
+        elif mode == 'rush':
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn In Airspawn')
             wait_on('assets/temp/cancel_spawn.png', True, 0.85)
@@ -670,11 +699,14 @@ def bot():
             time.sleep(5)
             print('CONSOLE: Choosing Target Base')
             press(KEYBINDS['ccrp'])
+        
 
         # Set variables for game loop
         battle_time = time.time()
         zoom_time = 0
         base_loc = [0, 0]
+
+
         zoom_flag = False
         brake_flag = False
         if city:
@@ -685,16 +717,22 @@ def bot():
         map_distance = DISTANCES[map]
         height = HEIGHTS[map]
         if aircraft == 'F-84F':
-            height += 400
-        
+            if map == 'GolanHeights':
+                height += 400
+            elif map == 'Vietnam':
+                height += 200
+            else:
+                height += 100
         
         # Hold down the bombing button
         hold(KEYBINDS['bomb'])
 
         # Bombing loop
         while game_over() == False:
-
+            # Get the base information
             base_info = get_base_info(map, base_loc)
+            
+            # Check for CCRP centreline and aim towards it
             centreline_location = pyautogui.locateOnScreen('assets/temp/centreline.png', grayscale=False, confidence=0.7)
             if centreline_location:
                 center_x, center_y = pyautogui.center(centreline_location)
@@ -704,26 +742,34 @@ def bot():
                 
                 distance_x = int((center_x - screen_center_x) / 2)
                 move_mouse_by(distance_x, 0)
+            # Base has been passed
             elif brake_flag and base_info[1] > last_dist:
                 release(KEYBINDS['bomb'])
                 break
+            # Guide by coordinates
             elif base_info and pitch_flag and not brake_flag:
                 move_mouse_by(int(base_info[0] * 10), 0)
+            
+            # Set last base distance
             if base_info is not None:
                 last_dist = base_info[1]
 
+            # Zoom in
             if zoom_time >= 6 and not zoom_flag:
                 press(KEYBINDS['zoom'])
                 zoom_flag = True
+            # Calculate Base location on EC Maps
             elif zoom_time == 10 and ec:
                 base_loc = calculate_ec_base()
             zoom_time += 1
 
+            # Pop flares after brakes have been applied
             if brake_flag:
                 print('CONSOLE: Popping Flares')
                 pyautogui.scroll(-2)
                 pyautogui.scroll(2)
 
+            # Retract airbrakes when under Mach 1
             if brake_flag and not mach_flag:
                 mach = get_mach()
                 if mach < 1.0:
@@ -731,6 +777,7 @@ def bot():
                     press(KEYBINDS['airbrake'])
                     mach_flag = True
 
+            # Get attitude and pitch down if the height is adequate
             attitude = get_attitude()
             if not city and not pitch_flag and attitude[0] > height - 10:
                 move_mouse_by(0, downVal + 5)
@@ -740,6 +787,7 @@ def bot():
 
             if base_info and zoom_time != 11:
                 base_loc = base_info[2]
+                # Deploy airbrakes if close enough to the base
                 if not brake_flag and base_info[1] <= map_distance:
                     if aircraft != 'F-84F':
                         print('CONSOLE: Deploying Airbrake')
@@ -747,38 +795,45 @@ def bot():
                     else:
                         mach_flag = True
                     pyautogui.scroll(-2)
-                    if aircraft in ["F-4F", "MiG-23BN"]:
+                    if aircraft in ["F-4F", "MiG-23BN", "Mirage-5F"]:
                         press(KEYBINDS['airbrake'])
                         print('CONSOLE: Retracting Airbrake')
                         mach_flag = True
                     brake_flag = True
 
-            if pitch_flag and not brake_flag:
+            # Maintain target altitude
+            if pitch_flag:
                 pitch_control(height, attitude[0], attitude[1])
             
             
         # After Bombing pitch up, throttle down, and bait enemies
         time.sleep(1)
-        cruising_height = height + 1500
+        brake_flag = False
         if not mach_flag:
             press(KEYBINDS['airbrake'])
-        brake_flag = False
         press(KEYBINDS['smoke'])
         move_mouse_by(0, -200)
+
+        cruising_height = height + 1500
         time.sleep(1)
-        # Turn right until dead
+
+        # Fly towards enemy Airfield
         while game_over() == False:
             attitude = get_attitude()
             field_data = get_field_info()
+            # Maintain altitude
             if not brake_flag:
                 pitch_control(cruising_height, attitude[0], attitude[1])
+            # Aim towards Airfield
             if field_data is not None:
                 move_mouse_by(int(field_data[0] * 10), 0)
+                # Airbrake and pitch down when close to airfield
                 if field_data[1] <= 0.085 and not brake_flag:
                     press(KEYBINDS['airbrake'])
                     if attitude[0] >= 2000:
-                        move_mouse_by(0, int(attitude[0]/12))
+                        move_mouse_by(0, int(attitude[0]/15))
                     brake_flag = True
+
             # J out if 10 minutes have passed
             elapsed_time = get_elapsed_time(battle_time)
             if elapsed_time >= 600:
@@ -880,13 +935,7 @@ def bot():
 
 # Main function
 def main():
-    # Create the main window
-    ctk.set_appearance_mode("dark")
-    ctk.set_default_color_theme("dark-blue")
-    root = ctk.CTk()
-    checkbox_var = tk.BooleanVar()
-    key_var = tk.StringVar()
-
+    # CustomTkinter functions
     # Function to handle the window close event
     def on_window_close():
         delete_temp_files()
@@ -941,12 +990,19 @@ def main():
         key = key_var.get()
         global resolution
         global aircraft
-        if checkbox_var.get() and check_key(key) and resolution is not None and aircraft is not None:
+        global mode
+        if agreement_checkbox_var.get() and check_key(key) and resolution is not None and aircraft is not None:
             # Prompt the user to Alt + Tab to War Thunder
             messagebox.showinfo("Alert", "Please Alt + Tab to War Thunder")
             root.destroy()
             # Allow time for user to Alt + Tab
             time.sleep(5)
+
+            # Set bot method
+            if mode_checkbox_var.get():
+                mode = "slow"
+            else:
+                mode = "rush"
 
             # Create a thread for the bot
             bot_thread = threading.Thread(target=bot)
@@ -982,14 +1038,21 @@ def main():
             messagebox.showinfo("Error", "Please Choose a Resolution")
         elif aircraft is None:
             messagebox.showinfo("Error", "Please Choose an Aircraft")
-        elif not checkbox_var.get():
-            # Checkbox is not checked, show an error message
+        elif not agreement_checkbox_var.get():
             messagebox.showinfo("Error", "Please agree to use responsibly.")
         else:
             messagebox.showinfo("Error", "Incorrect Key")
 
+    # Create the main window
+    ctk.set_appearance_mode("dark")
+    ctk.set_default_color_theme("dark-blue")
+    root = ctk.CTk()
+    agreement_checkbox_var = tk.BooleanVar()
+    mode_checkbox_var = tk.BooleanVar()
+    key_var = tk.StringVar()
+
     root.protocol("WM_DELETE_WINDOW", on_window_close)
-    root.geometry("800x700")
+    root.geometry("800x750")
     root.title("War Thunder Air Bot 1.0")
 
     frame = ctk.CTkFrame(master=root)
@@ -1028,6 +1091,7 @@ def main():
         print("Resolution currently chosen is: ", choice)
         resolutions = {
             '1920x1080': 1080,
+            '2560x1080': 1080,
             '2560x1440': 1440,
             '3840x2160': 2160
         }
@@ -1063,10 +1127,13 @@ def main():
                                         variable=aircraft_var)
     aircraft_box.pack(padx=20, pady=10)
 
+    mode_checkbox = ctk.CTkCheckBox(master=frame, text="Use slow method", variable=mode_checkbox_var)
+    mode_checkbox.pack(pady=12, padx=10)
+
     start_button = ctk.CTkButton(master=frame, text="Start Bot", command=start_bot)
     start_button.pack(pady=12, padx=10)
 
-    checkbox = ctk.CTkCheckBox(master=frame, text="I agree to use responsibly", variable=checkbox_var)
+    checkbox = ctk.CTkCheckBox(master=frame, text="I agree to use responsibly", variable=agreement_checkbox_var)
     checkbox.pack(pady=12, padx=10)
 
     root.iconbitmap("assets/icons/favicon.ico")
