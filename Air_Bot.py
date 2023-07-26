@@ -211,7 +211,7 @@ ctypes.pointer(extra) )
 #######################
 
 def game_over():
-    if pyautogui.locateOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.95) == None and pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95) == None:
+    if pyautogui.locateOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.95) == None and pyautogui.locateOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.95) == None:
         return False
     else:
         return True
@@ -590,6 +590,22 @@ def holdFor(key, seconds):
 #   General Functions   #
 #########################
 
+def holding_pattern(height):
+    move_mouse_by(-700, 0)
+    time.sleep(2)
+    attitude = get_attitude()
+    pitch_control(height, attitude[0], attitude[1])
+    press(KEYBINDS['ccrp_off'])
+    press(KEYBINDS['ccrp'])
+    base_count = count_bases()
+    time.sleep(1)
+    if pyautogui.locateOnScreen('assets/temp/centreline.png', grayscale=False, confidence=0.6) == None and base_count >= 2:
+        return True
+    else:
+        return False
+
+    
+
 # Research another modification
 def researched_mod():
     if pyautogui.locateOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.7) != None:
@@ -878,11 +894,9 @@ def bot():
 
         # Set variables for game loop
         battle_time = time.time()
-        zoom_time = 0
         base_loc = None
         brake_flag = False
         base_info = None
-        mach_flag = False
         map_distance = DISTANCES[map]
 
         # Set heights (Rush Logic)
@@ -937,23 +951,9 @@ def bot():
             # Reduce throttle and start holding pattern procedure
             holdFor(KEYBINDS["throttleDown"], 0.1)
             print("CONSOLE: Holding Pattern Initaited")
-            i = 0
-            base_count = 0
-            # Make into function
-            while (pyautogui.locateOnScreen('assets/temp/centreline.png', grayscale=False, confidence=0.6) == None or base_count <= 1) and not game_over():
-                if i >= 6:
-                    print("CONSOLE: Holding Pattern: Looking for bases...")
-                    i = 0
-                move_mouse_by(-700, 0)
-                time.sleep(2)
-                attitude = get_attitude()
-                pitch_control(height, attitude[0], attitude[1])
-                press(KEYBINDS['ccrp_off'])
-                press(KEYBINDS['ccrp'])
-                base_count = count_bases()
-                time.sleep(1)
-                i += 1
-
+            while holding_pattern(height) is False and not game_over():
+                pass
+                
         # Hold down the bombing button
         hold(KEYBINDS['bomb'])
 
@@ -1000,57 +1000,48 @@ def bot():
                     print(f"\nCONSOLE: Base Distance is: {base_info[1]}\nCONSOLE: Base Location is: {base_info[2]}")
                 elif not base_info:
                     print("CONSOLE: Base has been Destroyed")
+                    release(KEYBINDS['bomb'])
                     
 
             # Set new height
             if base_info and base_loc and mode == "rush" and aircraft != "F-84F":
                 height = set_height(mode, map, base_info, height)
-            
-            # Pop flares after brakes have been applied
-            if brake_flag and aircraft not in ["Su-17M2", "Milan", "Mirage-5F", "F-84F"]:
-                print('CONSOLE: Popping Flares')
-                pyautogui.scroll(-2)
-                pyautogui.scroll(2)
 
-            # Retract airbrakes when under Mach 1
-            if brake_flag and not mach_flag:
-                mach = get_mach()
-                if mach < 1.0:
-                    print('CONSOLE: Retracting Airbrake')
-                    press(KEYBINDS['airbrake'])
-                    mach_flag = True
+            
 
             # Get attitude of the aircraft
             attitude = get_attitude()
 
-            if base_info and zoom_time != 11:
+            if base_info:
                 base_loc = base_info[2]
                 # Deploy airbrakes if close enough to the base
                 if not brake_flag and base_info[1] <= map_distance:
+                    brake_flag = True
                     if aircraft not in ["F-84F", "Su-25k", "Su-17M2", "Milan", "Mirage-5F"]:
                         print('CONSOLE: Deploying Airbrake')
                         press(KEYBINDS['airbrake'])
                         pyautogui.scroll(-2)
-                    else:
-                        mach_flag = True
-                    if aircraft in ["F-4E", "F-4F", "MiG-23BN"]:
-                        press(KEYBINDS['airbrake'])
-                        print('CONSOLE: Retracting Airbrake')
-                        mach_flag = True
-                    brake_flag = True
+                        if aircraft in ["F-4E", "F-4F", "MiG-23BN"]:
+                            press(KEYBINDS['airbrake'])
+                            print('CONSOLE: Retracting Airbrake')
+                        elif aircraft not in ["F-84F", "Su-25k", "Su-17M2", "Milan", "Mirage-5F"]:
+                            # Retract airbrakes when under Mach 1
+                            mach = 1.1
+                            while mach <= 1.0:
+                                print('CONSOLE: Retracting Airbrake')
+                                press(KEYBINDS['airbrake'])
+                                mach = get_mach()
+                    
 
             # Maintain target altitude
             pitch_control(height, attitude[0], attitude[1])
             
         
-        # After Bombing 
+        # After Bombing Logic
         # throttle down and smoke
         time.sleep(1)
-        release(KEYBINDS['bomb'])
         pyautogui.scroll(-2)
         brake_flag = False
-        if not mach_flag and aircraft not in ["Su-17M2", "Milan", "Mirage-5F", "Su-25k", "F-84F"]:
-            press(KEYBINDS['airbrake'])
         press(KEYBINDS['smoke'])
 
         # Pitch up
@@ -1085,112 +1076,51 @@ def bot():
             if elapsed_time >= 600:
                 holdFor('j', 4)
 
-        # Vehicle has been destroyed
+
+        # After death logic
+        # Vehicle has been destroyed, J out
         if pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.85) != None:
             holdFor('j', 4)
-            print('CONSOLE: Aircraft Downed, Returning to Hangar 1')
+            print("CONSOLE: Aircraft Downed: J'ing out")
             time.sleep(4)
-            # Click 'Return To Hangar' Button
-            while pyautogui.locateCenterOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.85) == None and pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) == None and pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) == None:
-                print('CONSOLE: Aircraft Downed, FUCKING WAITINGGGG 1')
-                
+
+        # Return to Hangar appears
+        if pyautogui.locateCenterOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.85) != None:
             print('CONSOLE: Found Return To Hangar after Aircraft Downed')
             while pyautogui.locateCenterOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.85) != None:
-                if pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None or pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) != None:
-                    break
-                move_mouse_to_image('assets/temp/return_to_hangar.png')
-                click_mouse()
-                move_mouse_to(100, 100)
-                time.sleep(3)
-            
-            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) == None:
-                print('CONSOLE: Waiting on To Hangar after Aircraft Downed')
-                
-                
-            # Click 'To Hangar' Button
-            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None or pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) != None:
-                print('CONSOLE: Finding/Clicking To Hangar')
-                if pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None:
-                    print('CONSOLE: Found To Hangar after Aircraft Downed')
-                    move_mouse_to_image('assets/temp/to_hangar.png')
-                    click_mouse()
-                    move_mouse_to(100, 100)
-                elif pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) != None:
-                    press('esc')
-                    time.sleep(4)
-                    press('esc')
-                    time.sleep(4)
-                    press('esc')
-                    print('CONSOLE: Ran Research BUDDAY')
-                time.sleep(3)
-                
-            
-        elif pyautogui.locateCenterOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.85) != None:
-            print('CONSOLE: Aircraft Downed, Returning to Hangar 2')
-            while pyautogui.locateCenterOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.85) != None:
-                if pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None or pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) != None:
-                    break
                 move_mouse_to_image('assets/temp/return_to_hangar.png')
                 click_mouse()
                 move_mouse_to(100, 100)
                 time.sleep(3)
 
-            # Wait for 'To Hangar' Button or OK Button
-            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) == None:
-                print('CONSOLE: Waiting on To Hangar after Aircraft Downed')
-                if pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.85) != None:
-                    press(KEYBINDS['enter'])
-            # Click 'To Hangar' Button
-            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None or pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) != None:
-                print('CONSOLE: Finding/Clicking To Hangar')
-                if pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None:
-                    print('CONSOLE: Found To Hangar after Aircraft Downed')
-                    move_mouse_to_image('assets/temp/to_hangar.png')
-                    click_mouse()
-                    move_mouse_to(100, 100)
-                elif pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) != None:
-                    print('CONSOLE: Found OK After Aircraft Downed\nCONSOLE: Research or Modification occuring')
-                    mod = researched_mod()
-                    if mod == False:
-                        print("CONSOLE: Plane has been Researched")
-                        press('esc')
-                        time.sleep(4)
-                        press('esc')
-                        time.sleep(4)
-                        press('esc')
-                    else:
-                        print("CONSOLE: Modification has been Researched")
-                time.sleep(3)
+        # Wait for to Hangar or OK to appear
+        while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) == None:
+            print('CONSOLE: Waiting on To Hangar')
+            if pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.85) != None:
+                print('CONSOLE: Battle Trophy')
+                press(KEYBINDS['enter'])
+            time.sleep(1)
 
-        # Match has ended
-        else:
-            print('CONSOLE: Match Ended, Returning to Hangar')
-            # Wait for 'To Hangar' Button or OK Button
-            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) == None:
-                print('CONSOLE: Waiting on To Hangar after Match Ended')
-                if pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.85) != None:
-                    press(KEYBINDS['enter'])
-            # Click 'To Hangar' Button
-            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None or pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) != None:
-                print('CONSOLE: Finding/Clicking To Hangar')
-                if pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None:
-                    print('CONSOLE: Found To Hangar after Match Ended')
-                    move_mouse_to_image('assets/temp/to_hangar.png')
-                    click_mouse()
-                    move_mouse_to(100, 100)
-                elif pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) != None:
-                    print('CONSOLE: Found OK After Match Ended\nCONSOLE: Research or Modification occuring')
-                    mod = researched_mod()
-                    if mod == False:
-                        print("CONSOLE: Plane has been Researched")
-                        press('esc')
-                        time.sleep(4)
-                        press('esc')
-                        time.sleep(4)
-                        press('esc')
-                    else:
-                        print("CONSOLE: Modification has been Researched")
+        if pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None:
+            while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None:
+                print('CONSOLE: Clicking To Hangar')
+                move_mouse_to_image('assets/temp/to_hangar.png')
+                click_mouse()
+                move_mouse_to(100, 100)
                 time.sleep(3)
+        elif pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) != None:
+            mod = researched_mod()
+            if mod == False:
+                print("CONSOLE: Plane has been Researched")
+                press('esc')
+                time.sleep(4)
+                press('esc')
+                time.sleep(4)
+                press('esc')
+            else:
+                print("CONSOLE: Modification has been Researched")
+            time.sleep(3)
+
 
 # Main function
 def main():
