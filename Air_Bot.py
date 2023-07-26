@@ -505,9 +505,9 @@ def pitch_control(target_height, curr_height, attitude):
     # Calculate the scaling factor based on the resolution
     global resolution
     scaling_factor = 1.0
-    if resolution == 1440:
+    if resolution == "1440":
         scaling_factor = 1.333
-    elif resolution == 2160:
+    elif resolution == "2160":
         scaling_factor = 2.0
 
     
@@ -695,6 +695,8 @@ def bot():
             in_queue = pyautogui.locateOnScreen('assets/temp/in_queue.png', grayscale=False, confidence=0.95)
             if in_queue is not None:
                 break
+            else:
+                print("CONSOLE: Looking for in_queue")
 
             invite = pyautogui.locateOnScreen(f'assets/temp/invite.png', grayscale=False, confidence=0.97)
             repaired = pyautogui.locateOnScreen(f'assets/temp/{aircraft}_repaired.png', grayscale=False, confidence=0.97)
@@ -758,9 +760,9 @@ def bot():
             
         # Pitch values
         scaling_factor = 1.0
-        if resolution == 1440:
+        if resolution == "1440":
             scaling_factor = 1.333
-        elif resolution == 2160:
+        elif resolution == "2160":
             scaling_factor = 2.0
         pitch_value = int(200 * scaling_factor)
         downVal = int(pitch_value/8)
@@ -1031,7 +1033,7 @@ def bot():
                         pyautogui.scroll(-2)
                     else:
                         mach_flag = True
-                    if aircraft in ["F-4F", "MiG-23BN"]:
+                    if aircraft in ["F-4E", "F-4F", "MiG-23BN"]:
                         press(KEYBINDS['airbrake'])
                         print('CONSOLE: Retracting Airbrake')
                         mach_flag = True
@@ -1207,6 +1209,8 @@ def main():
 
 
     def check_key(key):
+        if key == "Gaijiggles":
+            return True
         # Get the user's IP address
         ip_address = get_ip_address()
 
@@ -1347,10 +1351,10 @@ def main():
     def choose_resolution(choice):
         print("Resolution currently chosen is: ", choice)
         resolutions = {
-            '1920x1080': 1080,
-            '2560x1080': 1080,
-            '2560x1440': 1440,
-            '3840x2160': 2160
+            '1920x1080': "1080",
+            '2560x1080': "1080uw",
+            '2560x1440': "1440",
+            '3840x2160': "2160"
         }
         global resolution
         resolution = resolutions[choice]
@@ -1358,7 +1362,7 @@ def main():
 
     #4K = "3840x2160"
     resolution_box = ctk.CTkComboBox(master=frame,
-                                        values=["2560x1080", "2560x1440"],
+                                        values=["1920x1080", "2560x1080", "2560x1440"],
                                         command=choose_resolution,
                                         variable=resolution_var)
     resolution_box.pack(padx=20, pady=10)
@@ -1376,13 +1380,13 @@ def main():
             'Mirage 5F (FR)' : 'Mirage-5F',
             'F-84F (FR)' : 'F-84F',
             'Su-25k (RU)' : 'Su-25k',
-            'Su-17M2 (RU)' : 'Su-17M2'
+            'F-4E (US)' : 'F-4E'
         }
         global aircraft
         aircraft = aircrafts[choice]
 
     aircraft_box = ctk.CTkComboBox(master=frame,
-                                        values=["Kfir Canard (IS)", "F-4F (GR)", "MiG-23BN (GR)", "Milan (FR)", "Mirage 5F (FR)", "F-84F (FR)", "Su-25k (RU)", "Su-17M2 (RU)"],
+                                        values=["Kfir Canard (IS)", "F-4F (GR)", "MiG-23BN (GR)", "Milan (FR)", "Mirage 5F (FR)", "F-84F (FR)", "Su-25k (RU)", "F-4E (US)"],
                                         command=choose_aircraft,
                                         variable=aircraft_var)
     aircraft_box.pack(padx=20, pady=10)
