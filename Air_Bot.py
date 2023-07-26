@@ -511,35 +511,36 @@ def pitch_control(target_height, curr_height, attitude):
         scaling_factor = 2.0
 
     
-    if height_diff > 0 and attitude > 20.0:
-        move_mouse_by(0, int(90 * scaling_factor))
-    elif height_diff > 0 and attitude > 10.0:
-        move_mouse_by(0, int(60 * scaling_factor))
-    elif height_diff > 0 and attitude > 5.0:
-        move_mouse_by(0, int(30 * scaling_factor))
+    if height_diff > 0:
+        if attitude > 20.0:
+            move_mouse_by(0, int(90 * scaling_factor))
+        elif attitude > 10.0:
+            move_mouse_by(0, int(60 * scaling_factor))
+        elif attitude > 5.0:
+            move_mouse_by(0, int(30 * scaling_factor))
+    elif height_diff > 200:
+        if attitude > -5.0:
+            move_mouse_by(0, int(60 * scaling_factor))
+        elif attitude > -10.0:
+            move_mouse_by(0, int(30 * scaling_factor))
+        elif attitude > -20.0:
+            move_mouse_by(0, int(10 * scaling_factor))
+    elif height_diff < 0:
+        if attitude < -35.0:
+            move_mouse_by(0, int(-640 * scaling_factor))
+        elif attitude < -30.0:
+            move_mouse_by(0, int(-360 * scaling_factor))
+        elif attitude < -25.0:
+            move_mouse_by(0, int(-180 * scaling_factor))
+        elif attitude < -20.0:
+            move_mouse_by(0, int(-90 * scaling_factor))
+        elif attitude < -10.0:
+            move_mouse_by(0, int(-60 * scaling_factor))
+        elif attitude < -5.0:
+            move_mouse_by(0, int(-30 * scaling_factor))
+        elif attitude < 0.5:
+            move_mouse_by(0, int(-10 * scaling_factor))
 
-    if height_diff > 200 and attitude > -5.0:
-        move_mouse_by(0, int(60 * scaling_factor))
-    elif height_diff > 200 and attitude > -10.0:
-        move_mouse_by(0, int(30 * scaling_factor))
-    elif height_diff > 200 and attitude > -20.0:
-        move_mouse_by(0, int(10 * scaling_factor))
-
-    elif height_diff > 25 and attitude > 0.0:
-        move_mouse_by(0, int(7 * scaling_factor))
-
-    elif height_diff < 0 and attitude < -30.0:
-        move_mouse_by(0, int(-360 * scaling_factor))
-    elif height_diff < 0 and attitude < -25.0:
-        move_mouse_by(0, int(-180 * scaling_factor))
-    elif height_diff < 0 and attitude < -20.0:
-        move_mouse_by(0, int(-90 * scaling_factor))
-    elif height_diff < 0 and attitude < -10.0:
-        move_mouse_by(0, int(-60 * scaling_factor))
-    elif height_diff < 0 and attitude < -5.0:
-        move_mouse_by(0, int(-30 * scaling_factor))
-    elif height_diff < 0 and attitude < 0.5:
-        move_mouse_by(0, int(-10 * scaling_factor))
 
 
 # Click mouse
