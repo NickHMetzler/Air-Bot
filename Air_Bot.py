@@ -32,6 +32,8 @@ import io
 # Global Variables
 resolution = None
 aircraft = None
+throttle = None
+brake = None
 
 # Allow the use of relative paths
 os.chdir(os.path.dirname(__file__))
@@ -1194,7 +1196,10 @@ def main():
         global resolution
         global aircraft
         global mode
-        if agreement_checkbox_var.get() and check_key(key) and resolution is not None and aircraft is not None:
+        global bot_mode
+        global brake
+        global throttle
+        if bot_mode == "preset" and agreement_checkbox_var.get() and check_key(key) and resolution is not None and aircraft is not None:
             # Prompt the user to Alt + Tab to War Thunder
             messagebox.showinfo("Alert", "Please Alt + Tab to War Thunder")
             root.destroy()
@@ -1237,14 +1242,59 @@ def main():
 
                     delete_temp_files()
                     end_program()
+
+        elif bot_mode == "custom" and agreement_checkbox_var.get() and check_key(key) and resolution is not None and throttle is not None and brake is not None:
+            # Prompt the user to Alt + Tab to War Thunder
+            messagebox.showinfo("Alert", "Please Alt + Tab to War Thunder")
+            root.destroy()
+            # Allow time for user to Alt + Tab
+            time.sleep(5)
+
+            # Create a thread for the bot
+            bot_thread = threading.Thread(target=bot)
+
+            # Start the bot
+            bot_thread.start()
+
+            launch_time = time.time()
+
+            # Check if the user presses key 'q' then quit the program
+            while True:
+                if keyboard.is_pressed('q'):
+                    # handle the 'q' key press
+                    print("CONSOLE: Exiting program")
+                    # Quit the program
+                    time.sleep(1)
+                    elapsed_time = get_elapsed_time(launch_time)
+                    # Convert the elapsed time into a timedelta object
+                    time_delta = datetime.timedelta(seconds=elapsed_time)
+
+                    # Get the hours, minutes, and seconds from the timedelta object
+                    hours = time_delta.seconds // 3600
+                    minutes = (time_delta.seconds % 3600) // 60
+                    seconds = time_delta.seconds % 60
+
+                    # Format the time as HH:MM:SS
+                    formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+                    print(f'CONSOLE: Bot was running for: {formatted_time}')
+
+                    delete_temp_files()
+                    end_program()
+        
+        elif not check_key(key):
+            messagebox.showinfo("Error", "Incorrect Key")
         elif resolution is None:
             messagebox.showinfo("Error", "Please Choose a Resolution")
-        elif aircraft is None:
+        elif bot_mode == "preset" and aircraft is None:
             messagebox.showinfo("Error", "Please Choose an Aircraft")
+        elif bot_mode == "custom" and throttle is None:
+            messagebox.showinfo("Error", "Please Choose Throttle Behavior")
+        elif bot_mode == "custom" and brake is None:
+            messagebox.showinfo("Error", "Please Choose Airbrake Behavior")
         elif not agreement_checkbox_var.get():
             messagebox.showinfo("Error", "Please agree to use responsibly.")
         else:
-            messagebox.showinfo("Error", "Incorrect Key")
+            messagebox.showinfo("Error", "Something went wrong")
     
     def choose_resolution(choice):
         print("Resolution currently chosen is: ", choice)
@@ -1321,12 +1371,16 @@ def main():
 
     # Function to handle the button click event
     def change_to_home():
+        global bot_mode
         frame.pack(pady=20, padx=20, fill="both", expand=True)
         frame2.pack_forget()
+        bot_mode = "preset"
 
     def change_to_custom():
+        global bot_mode
         frame2.pack(pady=20, padx=20, fill="both", expand=True)
         frame.pack_forget()
+        bot_mode = "custom"
     
     # Add a button to the sidebar with the image
     sidebar_button_home = ctk.CTkButton(master=sidebar, text="", image=sidebar_image_home, command=change_to_home, width=65, height=60)
