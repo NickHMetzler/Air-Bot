@@ -1001,7 +1001,7 @@ def bot():
                     print(f"\nCONSOLE: Base Distance is: {base_info[1]}\nCONSOLE: Base Location is: {base_info[2]}")
                 elif not base_info:
                     print("CONSOLE: Base has been Destroyed")
-                    release(KEYBINDS['bomb'])
+                    
                     
 
             # Set new height
@@ -1040,10 +1040,12 @@ def bot():
         
         # After Bombing Logic
         # throttle down and smoke
+        release(KEYBINDS['bomb'])
         time.sleep(1)
         pyautogui.scroll(-2)
         brake_flag = False
         press(KEYBINDS['smoke'])
+        
 
         # Pitch up
         if aircraft != "Su-25k":
@@ -1083,7 +1085,10 @@ def bot():
         if pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.85) != None:
             holdFor('j', 4)
             print("CONSOLE: Aircraft Downed: J'ing out")
-            time.sleep(4)
+            time.sleep(1)
+
+        while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.85) == None and pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) == None:
+            print('CONSOLE: Waiting on To Hangar/Return To Hangar/OK')
 
         # Return to Hangar appears
         if pyautogui.locateCenterOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.85) != None:
@@ -1096,7 +1101,7 @@ def bot():
 
         # Wait for to Hangar or OK to appear
         while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) == None:
-            print('CONSOLE: Waiting on To Hangar')
+            print('CONSOLE: Waiting on To Hangar/OK')
             if pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.85) != None:
                 print('CONSOLE: Battle Trophy')
                 press(KEYBINDS['enter'])
