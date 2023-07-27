@@ -1144,7 +1144,7 @@ def main():
 
     # Function to update the variable when the text changes
     def update_key_var(event):
-        key_var.set(key_entry.get())
+        key_var.set(key_entry_home.get())
     
     def key_exists(key):
         key_var.set(key)
@@ -1272,8 +1272,24 @@ def main():
         global aircraft
         aircraft = aircrafts[choice]
 
-
+    def choose_brakes(choice):
+        print("Brakes Chosen: ", choice)
+        brakes = {
+            'No Airbrake': 'No',
+            'Tap Airbrake': 'Tap',
+            'Hold Airbrake': 'Hold',
+        }
+        global brake
+        brake = brakes[choice]
     
+    def choose_throttle(choice):
+        print("Throttle Chosen: ", choice)
+        throttles = {
+            'Full Throttle': 'Full',
+            'Kill Afterburner': 'Slow',
+        }
+        global throttle
+        throttle = throttles[choice]
         
     
     # Create the main window
@@ -1293,8 +1309,11 @@ def main():
     sidebar.pack(side="left", fill="y")
 
     # Load the image for the button
-    image_path = "assets/icons/home.png"  #
-    sidebar_image = ctk.CTkImage(Image.open(image_path), size=[30, 30])
+    image_path_home = "assets/icons/home.png"
+    sidebar_image_home = ctk.CTkImage(Image.open(image_path_home), size=[30, 30])
+
+    image_path_custom = "assets/icons/wrench.png"
+    sidebar_image_custom = ctk.CTkImage(Image.open(image_path_custom), size=[30, 30])
 
     frame = ctk.CTkFrame(master=root)
 
@@ -1310,70 +1329,112 @@ def main():
         frame.pack_forget()
     
     # Add a button to the sidebar with the image
-    sidebar_button = ctk.CTkButton(master=sidebar, text="", image=sidebar_image, command=change_to_home, width=65, height=60)
-    sidebar_button.pack(pady=10, padx=10)
+    sidebar_button_home = ctk.CTkButton(master=sidebar, text="", image=sidebar_image_home, command=change_to_home, width=65, height=60)
+    sidebar_button_home.pack(pady=10, padx=10)
 
     # Add a button to the sidebar with the image
-    sidebar_button = ctk.CTkButton(master=sidebar, text="Custom", command=change_to_custom, width=65, height=60)
-    sidebar_button.pack(pady=10, padx=10)
+    sidebar_button_custom = ctk.CTkButton(master=sidebar, text="", image=sidebar_image_custom, command=change_to_custom, width=65, height=60)
+    sidebar_button_custom.pack(pady=10, padx=10)
 
     # After here
     logo = ctk.CTkImage(Image.open("assets/icons/icon.png"), size=[164, 139])
-    logo_label = ctk.CTkLabel(frame, text="", image=logo)
-    logo_label.pack(pady=12, padx=10)
+    logo_label_home = ctk.CTkLabel(frame, text="", image=logo)
+    logo_label_home.pack(pady=12, padx=10)
 
-    label = ctk.CTkLabel(master=frame, text="Nicks War Thunder Air Bot 1.0", font=("Roboto", 24))
-    label.pack(pady=12, padx=10)
+    logo_label_custom = ctk.CTkLabel(frame2, text="", image=logo)
+    logo_label_custom.pack(pady=12, padx=10)
+
+    label_home = ctk.CTkLabel(master=frame, text="Nicks War Thunder Air Bot 1.0\nMain Menu", font=("Roboto", 24))
+    label_home.pack(pady=12, padx=10)
+
+    label_custom = ctk.CTkLabel(master=frame2, text="Nicks War Thunder Air Bot 1.0\nCustom Menu", font=("Roboto", 24))
+    label_custom.pack(pady=12, padx=10)
 
     # Create the setup instructions label
-    instructions_label = ctk.CTkLabel(master=frame,
+    instructions_label_home = ctk.CTkLabel(master=frame,
                                       text="Setup Instructions:\n1. Check the KeyBinds file and ensure that your keybinds are set up correctly\n2. Go to Hangar and have the appropriate aircraft selected\n3. Select 'Air Realistic Battles'\n4. Ensure you are using Red and Blue default colors\n\nTo end the program, press and hold 'q' at any time",
                                       font=("Roboto", 15))
-    instructions_label.pack(pady=12, padx=10)
+    instructions_label_home.pack(pady=12, padx=10)
 
-    key_entry = ctk.CTkEntry(master=frame, placeholder_text="Activation Key", show="*")
-    key_entry.pack(pady=12, padx=10)
+    # Create the setup instructions label
+    instructions_label_custom = ctk.CTkLabel(master=frame2,
+                                      text="Custom Setup Instructions:\n1. Select the options relevant to your Aircraft\n2. Go to Hangar and have the appropriate aircraft selected\n3. Select 'Air Realistic Battles'\n4. Ensure you are using Red and Blue default colors\n\nTo end the program, press and hold 'q' at any time",
+                                      font=("Roboto", 15))
+    instructions_label_custom.pack(pady=12, padx=10)
+
+    key_entry_home = ctk.CTkEntry(master=frame, placeholder_text="Activation Key", show="*")
+    key_entry_home.pack(pady=12, padx=10)
 
     # Get key from .env
     activation_key = os.getenv("activation_key")
 
     if activation_key:
-        key_entry.insert(0, activation_key)
+        key_entry_home.insert(0, activation_key)
         key_exists(activation_key)
 
     # Bind the function to the text change event of the entry widget
-    key_entry.bind("<KeyRelease>", update_key_var)
+    key_entry_home.bind("<KeyRelease>", update_key_var)
 
     # Resolution drop down
-    resolution_var = ctk.StringVar(value="Select Resolution")  # set initial value
+    resolution_var = ctk.StringVar(value="Select Resolution")
 
     #4K = "3840x2160"
-    resolution_box = ctk.CTkComboBox(master=frame,
+    resolution_box_home = ctk.CTkComboBox(master=frame,
                                         values=["1920x1080", "2560x1080", "2560x1440"],
                                         command=choose_resolution,
                                         variable=resolution_var)
-    resolution_box.pack(padx=20, pady=10)
+    resolution_box_custom = ctk.CTkComboBox(master=frame2,
+                                        values=["1920x1080", "2560x1080", "2560x1440"],
+                                        command=choose_resolution,
+                                        variable=resolution_var)
+    resolution_box_home.pack(padx=20, pady=10)
+    resolution_box_custom.pack(padx=20, pady=10)
 
     # Aircraft drop down
-    aircraft_var = ctk.StringVar(value="Select Aircraft")  # set initial value
+    aircraft_var_home = ctk.StringVar(value="Select Aircraft")  # set initial value
 
-    aircraft_box = ctk.CTkComboBox(master=frame,
+    aircraft_box_home = ctk.CTkComboBox(master=frame,
                                         values=["Kfir Canard (IS)", "F-4F (GR)", "MiG-23BN (GR)", "Milan (FR)", "Mirage 5F (FR)", "F-84F (FR)", "Su-25k (RU)", "F-4E (US)"],
                                         command=choose_aircraft,
-                                        variable=aircraft_var)
-    aircraft_box.pack(padx=20, pady=10)
+                                        variable=aircraft_var_home)
+    aircraft_box_home.pack(padx=20, pady=10)
 
-    mode_checkbox = ctk.CTkCheckBox(master=frame, text="Use slow method", variable=mode_checkbox_var)
-    mode_checkbox.pack(pady=12, padx=10)
+    # Throttle
+    throttle_var_custom = ctk.StringVar(value="Throttle Behavior")  # set initial value
 
-    start_button = ctk.CTkButton(master=frame, text="Start Bot", command=start_bot)
-    start_button.pack(pady=12, padx=10)
+    throttle_box_custom = ctk.CTkComboBox(master=frame2,
+                                        values=["Full Throttle", "Kill Afterburner"],
+                                        command=choose_throttle,
+                                        variable=throttle_var_custom)
+    throttle_box_custom.pack(padx=20, pady=10)
 
-    checkbox = ctk.CTkCheckBox(master=frame, text="I agree to use responsibly", variable=agreement_checkbox_var)
-    checkbox.pack(pady=12, padx=10)
+    # Airbrake
+    airbrake_var_custom = ctk.StringVar(value="Airbrake Behavior")  # set initial value
+
+    airbrake_box_custom = ctk.CTkComboBox(master=frame2,
+                                        values=["No Airbrake", "Tap Airbrake", "Hold Airbrake"],
+                                        command=choose_brakes,
+                                        variable=airbrake_var_custom)
+    airbrake_box_custom.pack(padx=20, pady=10)
+
+    mode_checkbox_home = ctk.CTkCheckBox(master=frame, text="Use slow method", variable=mode_checkbox_var)
+    mode_checkbox_home.pack(pady=12, padx=10)
+
+    start_button_home = ctk.CTkButton(master=frame, text="Start Bot", command=start_bot)
+    start_button_home.pack(pady=12, padx=10)
+
+    start_button_custom = ctk.CTkButton(master=frame2, text="Start Bot", command=start_bot)
+    start_button_custom.pack(pady=12, padx=10)
+
+    checkbox_home = ctk.CTkCheckBox(master=frame, text="I agree to use responsibly", variable=agreement_checkbox_var)
+    checkbox_home.pack(pady=12, padx=10)
+
+    checkbox_custom = ctk.CTkCheckBox(master=frame2, text="I agree to use responsibly", variable=agreement_checkbox_var)
+    checkbox_custom.pack(pady=12, padx=10)
 
     root.iconbitmap("assets/icons/favicon.ico")
     # Start the GUI main loop
+    change_to_home()
     root.mainloop()
 
 
