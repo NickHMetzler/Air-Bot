@@ -673,11 +673,13 @@ def delete_temp_files():
 # Define a dictionary to map conditions to heights
 heights_map = {
     ('rush', 'GolanHeightsALT', 650): (lambda base_info: base_info[1] <= 0.26),
+    ('rush', 'GolanHeights', 550): (lambda base_info: base_info[1] <= 0.26),
     ('rush', 'Sinai', 500): (lambda base_info: base_info[2][0] >= 0.35),
-    ('rush', 'Vietnam', 1000): (lambda base_info: base_info[2][0] >= 0.513),
+    ('rush', 'Vietnam', 1200): (lambda base_info: base_info[2][0] >= 0.513),
     ('rush', 'City', 300): (lambda base_info: base_info[1] <= 0.11),
     ('rush', 'Spain', 550): (lambda base_info: base_info[1] <= 0.16),
-    ('rush', 'SinaiALT', 300): (lambda base_info: base_info[2][0] <= 0.39 and base_info[1] <= 0.24)
+    ('rush', 'SinaiALT', 300): (lambda base_info: base_info[2][0] <= 0.39 and base_info[1] <= 0.24),
+    ('rush', 'SinaiALT', 300): (lambda base_info: base_info[2][0] >= 0.4 and base_info[1] <= 0.14)
 }
 
 # Function to check and set the height value
@@ -1005,8 +1007,9 @@ def bot():
                     
 
             # Set new height
-            if base_info and base_loc and mode == "rush" and aircraft != "F-84F":
+            if base_info and mode == "rush" and aircraft != "F-84F":
                 height = set_height(mode, map, base_info, height)
+                print("Changing height UwU")
 
             
 
