@@ -704,6 +704,14 @@ def bot():
     global resolution
     global mode
     global bases_arr
+    
+    # Set scaling factor for mouse inputs based on resolution
+    scaling_factor = 1.0
+    if resolution == "1440":
+        scaling_factor = 1.333
+    elif resolution == "2160":
+        scaling_factor = 2.0
+
     # Process the bin folder
     process_bin_folder(f"assets/bin/{resolution}")
     # Bot loop
@@ -778,11 +786,6 @@ def bot():
         time.sleep(1)
             
         # Pitch values
-        scaling_factor = 1.0
-        if resolution == "1440":
-            scaling_factor = 1.333
-        elif resolution == "2160":
-            scaling_factor = 2.0
         pitch_value = int(200 * scaling_factor)
         downVal = int(pitch_value/8)
 
@@ -837,7 +840,7 @@ def bot():
                     target_info = get_target_info(target_location)
                     if target_info:
                         angle = target_info[0]
-                        move_mouse_by(int(angle * 10), 0)
+                        move_mouse_by(int(angle * 10 * scaling_factor), 0)
                 # Pitch down a few times
                 for i in range(3):
                         move_mouse_by(0, downVal + 5)
@@ -891,7 +894,7 @@ def bot():
                     target_info = get_target_info(target_location)
                     if target_info:
                         angle = target_info[0]
-                        move_mouse_by(int(angle * 10), 0)
+                        move_mouse_by(int(angle * 10 * scaling_factor), 0)
                 
         
 
@@ -942,7 +945,7 @@ def bot():
                 if target_info:
                     distance = target_info[1]
                     angle = target_info[0]
-                    move_mouse_by(int(angle * 10), 0)
+                    move_mouse_by(int(angle * 10 * scaling_factor), 0)
                 attitude = get_attitude()
                 if i >= 6:
                     count_bases()
@@ -987,7 +990,7 @@ def bot():
             
             # Guide by coordinates
             elif base_info and not brake_flag:
-                move_mouse_by(int(base_info[0] * 10), 0)
+                move_mouse_by(int(base_info[0] * 10 * scaling_factor), 0)
             
             # Get the base information
             if base_loc != None:
@@ -1052,7 +1055,7 @@ def bot():
 
         # Pitch up
         if aircraft != "Su-25k":
-            move_mouse_by(0, -200)
+            move_mouse_by(0, -200 * scaling_factor)
             cruising_height = height + 1500
         else:
             cruising_height = height
@@ -1069,12 +1072,12 @@ def bot():
                 pitch_control(cruising_height, attitude[0], attitude[1])
             # Aim towards Airfield
             if field_data is not None:
-                move_mouse_by(int(field_data[0] * 10), 0)
+                move_mouse_by(int(field_data[0] * 10 * scaling_factor), 0)
                 # Airbrake and pitch down when close to airfield
                 if field_data[1] <= 0.085 and not brake_flag:
                     press(KEYBINDS['airbrake'])
                     if attitude[0] >= 2000:
-                        move_mouse_by(0, int(attitude[0]/15))
+                        move_mouse_by(0, int(attitude[0]/15 * scaling_factor))
                     brake_flag = True
 
             # J out if 10 minutes have passed
@@ -1242,7 +1245,37 @@ def main():
             messagebox.showinfo("Error", "Please agree to use responsibly.")
         else:
             messagebox.showinfo("Error", "Incorrect Key")
+    
+    def choose_resolution(choice):
+        print("Resolution currently chosen is: ", choice)
+        resolutions = {
+            '1920x1080': "1080",
+            '2560x1080': "1080uw",
+            '2560x1440': "1440",
+            '3840x2160': "2160"
+        }
+        global resolution
+        resolution = resolutions[choice]
 
+    def choose_aircraft(choice):
+        print("Aircraft Chosen: ", choice)
+        aircrafts = {
+            'Kfir Canard (IS)': 'Kfir',
+            'F-4F (GR)': 'F-4F',
+            'MiG-23BN (GR)': 'MiG-23BN',
+            'Milan (FR)' : 'Milan',
+            'Mirage 5F (FR)' : 'Mirage-5F',
+            'F-84F (FR)' : 'F-84F',
+            'Su-25k (RU)' : 'Su-25k',
+            'F-4E (US)' : 'F-4E'
+        }
+        global aircraft
+        aircraft = aircrafts[choice]
+
+
+    
+        
+    
     # Create the main window
     ctk.set_appearance_mode("dark")
     ctk.set_default_color_theme("dark-blue")
@@ -1255,9 +1288,36 @@ def main():
     root.geometry("800x750")
     root.title("War Thunder Air Bot 1.0")
 
-    frame = ctk.CTkFrame(master=root)
-    frame.pack(pady=20, padx=60, fill="both", expand=True)
+    # Create the sidebar
+    sidebar = ctk.CTkFrame(master=root)
+    sidebar.pack(side="left", fill="y")
 
+    # Load the image for the button
+    image_path = "assets/icons/home.png"  #
+    sidebar_image = ctk.CTkImage(Image.open(image_path), size=[30, 30])
+
+    frame = ctk.CTkFrame(master=root)
+
+    frame2 = ctk.CTkFrame(master=root)
+
+    # Function to handle the button click event
+    def change_to_home():
+        frame.pack(pady=20, padx=20, fill="both", expand=True)
+        frame2.pack_forget()
+
+    def change_to_custom():
+        frame2.pack(pady=20, padx=20, fill="both", expand=True)
+        frame.pack_forget()
+    
+    # Add a button to the sidebar with the image
+    sidebar_button = ctk.CTkButton(master=sidebar, text="", image=sidebar_image, command=change_to_home, width=65, height=60)
+    sidebar_button.pack(pady=10, padx=10)
+
+    # Add a button to the sidebar with the image
+    sidebar_button = ctk.CTkButton(master=sidebar, text="Custom", command=change_to_custom, width=65, height=60)
+    sidebar_button.pack(pady=10, padx=10)
+
+    # After here
     logo = ctk.CTkImage(Image.open("assets/icons/icon.png"), size=[164, 139])
     logo_label = ctk.CTkLabel(frame, text="", image=logo)
     logo_label.pack(pady=12, padx=10)
@@ -1287,18 +1347,6 @@ def main():
     # Resolution drop down
     resolution_var = ctk.StringVar(value="Select Resolution")  # set initial value
 
-    def choose_resolution(choice):
-        print("Resolution currently chosen is: ", choice)
-        resolutions = {
-            '1920x1080': "1080",
-            '2560x1080': "1080uw",
-            '2560x1440': "1440",
-            '3840x2160': "2160"
-        }
-        global resolution
-        resolution = resolutions[choice]
-
-
     #4K = "3840x2160"
     resolution_box = ctk.CTkComboBox(master=frame,
                                         values=["1920x1080", "2560x1080", "2560x1440"],
@@ -1308,21 +1356,6 @@ def main():
 
     # Aircraft drop down
     aircraft_var = ctk.StringVar(value="Select Aircraft")  # set initial value
-
-    def choose_aircraft(choice):
-        print("Aircraft Chosen: ", choice)
-        aircrafts = {
-            'Kfir Canard (IS)': 'Kfir',
-            'F-4F (GR)': 'F-4F',
-            'MiG-23BN (GR)': 'MiG-23BN',
-            'Milan (FR)' : 'Milan',
-            'Mirage 5F (FR)' : 'Mirage-5F',
-            'F-84F (FR)' : 'F-84F',
-            'Su-25k (RU)' : 'Su-25k',
-            'F-4E (US)' : 'F-4E'
-        }
-        global aircraft
-        aircraft = aircrafts[choice]
 
     aircraft_box = ctk.CTkComboBox(master=frame,
                                         values=["Kfir Canard (IS)", "F-4F (GR)", "MiG-23BN (GR)", "Milan (FR)", "Mirage 5F (FR)", "F-84F (FR)", "Su-25k (RU)", "F-4E (US)"],
