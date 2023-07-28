@@ -512,7 +512,15 @@ def pitch_control(target_height, curr_height, attitude):
         scaling_factor = 2.0
 
     
-    
+    if height_diff > 0:
+        print(f"CONSOLE: pitch_control(): Aircraft is above target height by {height_diff}m")
+    else:
+        print(f"CONSOLE: pitch_control(): Aircraft is below target height by {-height_diff}m")
+    if attitude > 0:
+        print(f"CONSOLE: pitch_control(): Aircraft is ascending by {attitude}m/s")
+    else:
+        print(f"CONSOLE: pitch_control(): Aircraft is descending by {-attitude}m/s")
+
     if height_diff > 200:
         if attitude > -5.0:
             move_mouse_by(0, int(60 * scaling_factor))
@@ -528,8 +536,10 @@ def pitch_control(target_height, curr_height, attitude):
         elif attitude > 5.0:
             move_mouse_by(0, int(30 * scaling_factor))
     elif height_diff < 0:
-        if attitude < -35.0:
-            move_mouse_by(0, int(-640 * scaling_factor))
+        if attitude < -40.0:
+            move_mouse_by(0, int(-1080 * scaling_factor))
+        elif attitude < -35.0:
+            move_mouse_by(0, int(-720 * scaling_factor))
         elif attitude < -30.0:
             move_mouse_by(0, int(-360 * scaling_factor))
         elif attitude < -25.0:
@@ -634,7 +644,7 @@ def researched_mod():
     elif pyautogui.locateOnScreen('assets/temp/spend.png', grayscale=False, confidence=0.85) != None:
         print('CONSOLE: researched_mod(): Found Spend')
         while pyautogui.locateOnScreen('assets/temp/spend.png', grayscale=False, confidence=0.7) != None:
-            move_mouse_to_image('assets/temp/finish.png')
+            move_mouse_to_image('assets/temp/spend.png')
             click_mouse()
             print("CONSOLE: researched_mod(): Trying to click Spend")
             time.sleep(0.5)
@@ -678,9 +688,10 @@ heights_map = {
     ('rush', 'GolanHeights', 550): (lambda base_info: base_info[1] <= 0.26),
     ('rush', 'Sinai', 500): (lambda base_info: base_info[2][0] >= 0.35),
     ('rush', 'Vietnam', 1200): (lambda base_info: base_info[2][0] >= 0.513),
-    ('rush', 'City', 300): (lambda base_info: base_info[1] <= 0.11),
+    ('rush', 'City', 300): (lambda base_info: base_info[1] <= 0.11), #check base_loc
     ('rush', 'Spain', 550): (lambda base_info: base_info[1] <= 0.16),
-    ('rush', 'SinaiALT', 300): (lambda base_info: base_info[1] <= 0.24)
+    ('rush', 'SinaiALT', 300): (lambda base_info: base_info[1] <= 0.24),
+    ('rush', 'City', 300): (lambda base_info: base_info[1] <= 0.24) # check
 }
 
 # Function to check and set the height value
@@ -692,8 +703,8 @@ def set_height(mode, map_name, base_info, height):
                     print(f"CONSOLE: Changing {map_name} Height from {height} to {key[2]}")
                     height = key[2]
             elif height != HEIGHTS[map_name]:
+                print(f"CONSOLE: Changing back {map_name} Height to from {height} to {HEIGHTS[map_name]}")
                 height = HEIGHTS[map_name]
-                print(f"CONSOLE: Changing {map_name} Height to OG")
             break
     return height
 
@@ -727,6 +738,10 @@ def bot():
         else:
             brake = "Full"
             throttle = "Slow"
+        if aircraft in ["F-84F"]:
+            airspawn = True
+        else:
+            airspawn = False
     else:
         aircraft = None
         mode = "rush"
@@ -738,12 +753,6 @@ def bot():
         bases_arr = []
         start_loop = time.time()
         while True:
-            in_queue = pyautogui.locateOnScreen('assets/temp/in_queue.png', grayscale=False, confidence=0.95)
-            if in_queue is not None:
-                break
-            else:
-                print("CONSOLE: Looking for in_queue")
-
             invite = pyautogui.locateOnScreen(f'assets/temp/invite.png', grayscale=False, confidence=0.97)
             if bot_mode == "preset":
                 repaired = pyautogui.locateOnScreen(f'assets/temp/{aircraft}_repaired.png', grayscale=False, confidence=0.97)
@@ -759,6 +768,13 @@ def bot():
             # if trophy is not None or to_hangar is not None or repaired is not None:
             if trophy is not None or to_hangar is not None or repaired is not None or mode == 'slow' or bot_mode == "custom":
                 press(KEYBINDS['enter'])
+
+            in_queue = pyautogui.locateOnScreen('assets/temp/in_queue.png', grayscale=False, confidence=0.95)
+            if in_queue is not None:
+                break
+            else:
+                print("CONSOLE: Did not find in_queue")
+                time.sleep(10)
 
             time.sleep(0.5)
 
@@ -813,7 +829,7 @@ def bot():
 
         # Take off/spawn procedure
         battle_time = time.time()
-        if not city and aircraft != 'F-84F':
+        if not city and not airspawn:
             # Wait to Spawn in
             print('CONSOLE: Waiting to Spawn on Airfield')
             wait_on('assets/temp/cancel_spawn.png', True, 0.85)
@@ -931,7 +947,7 @@ def bot():
         if mode == 'rush':
             print(f"CONSOLE: In the Rush Logic")
             height = HEIGHTS[map]
-            if aircraft == 'F-84F':
+            if airspawn:
                 if map == 'GolanHeights':
                     height += 400
                 elif map == 'Vietnam':
@@ -1025,14 +1041,15 @@ def bot():
                     #base_loc = None
                     #press(KEYBINDS["zoom"])
                 elif base_info:
-                    print(f"\nCONSOLE: Base Distance is: {base_info[1]}\nCONSOLE: Base Location is: {base_info[2]}")
+                    print(f"CONSOLE: Base Distance is: {base_info[1]}")
                 elif not base_info:
                     print("CONSOLE: Base has been Destroyed")
+                    break
                     
                     
 
             # Set new height
-            if base_info and mode == "rush" and aircraft != "F-84F":
+            if base_info and mode == "rush" and not airspawn:
                 height = set_height(mode, map, base_info, height)
 
             
@@ -1069,6 +1086,7 @@ def bot():
         
         # After Bombing Logic
         # throttle down and smoke
+        print("CONSOLE: Heading towards enemy Airfield")
         release(KEYBINDS['bomb'])
         time.sleep(1)
         pyautogui.scroll(-2)
