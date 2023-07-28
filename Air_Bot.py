@@ -720,7 +720,7 @@ def bot():
     global brake
     global throttle
     global flare
-    
+    first = True
     # Set scaling factor for mouse inputs based on resolution
     scaling_factor = 1.0
     if resolution == "1440":
@@ -756,6 +756,8 @@ def bot():
             invite = pyautogui.locateOnScreen(f'assets/temp/invite.png', grayscale=False, confidence=0.97)
             if bot_mode == "preset":
                 repaired = pyautogui.locateOnScreen(f'assets/temp/{aircraft}_repaired.png', grayscale=False, confidence=0.97)
+                if not repaired and first:
+                    print(f"CONSOLE: The {aircraft} preset does not seem to be supported for your resolution: Please submit a ticket on the Discord")
             else: 
                 repaired = None
             trophy = pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95)
@@ -778,7 +780,7 @@ def bot():
 
             time.sleep(0.5)
 
-
+        first = False
         print("\n\nCONSOLE: To Battle!")
 
         # Wait to Join Battle
