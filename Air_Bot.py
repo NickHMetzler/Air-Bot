@@ -503,7 +503,6 @@ def get_field_info():
 # Change the pitch of the plane based on height and RoC
 def pitch_control(target_height, curr_height, attitude):
     height_diff = curr_height - target_height
-
     # Calculate the scaling factor based on the resolution
     global resolution
     scaling_factor = 1.0
@@ -513,20 +512,21 @@ def pitch_control(target_height, curr_height, attitude):
         scaling_factor = 2.0
 
     
-    if height_diff > 0:
-        if attitude > 20.0:
-            move_mouse_by(0, int(90 * scaling_factor))
-        elif attitude > 10.0:
-            move_mouse_by(0, int(60 * scaling_factor))
-        elif attitude > 5.0:
-            move_mouse_by(0, int(30 * scaling_factor))
-    elif height_diff > 200:
+    
+    if height_diff > 200:
         if attitude > -5.0:
             move_mouse_by(0, int(60 * scaling_factor))
         elif attitude > -10.0:
             move_mouse_by(0, int(30 * scaling_factor))
         elif attitude > -20.0:
             move_mouse_by(0, int(10 * scaling_factor))
+    elif height_diff > 0:
+        if attitude > 20.0:
+            move_mouse_by(0, int(90 * scaling_factor))
+        elif attitude > 10.0:
+            move_mouse_by(0, int(60 * scaling_factor))
+        elif attitude > 5.0:
+            move_mouse_by(0, int(30 * scaling_factor))
     elif height_diff < 0:
         if attitude < -35.0:
             move_mouse_by(0, int(-640 * scaling_factor))
@@ -680,8 +680,7 @@ heights_map = {
     ('rush', 'Vietnam', 1200): (lambda base_info: base_info[2][0] >= 0.513),
     ('rush', 'City', 300): (lambda base_info: base_info[1] <= 0.11),
     ('rush', 'Spain', 550): (lambda base_info: base_info[1] <= 0.16),
-    ('rush', 'SinaiALT', 300): (lambda base_info: base_info[2][0] <= 0.39 and base_info[1] <= 0.24),
-    ('rush', 'SinaiALT', 300): (lambda base_info: base_info[2][0] >= 0.4 and base_info[1] <= 0.14)
+    ('rush', 'SinaiALT', 300): (lambda base_info: base_info[1] <= 0.24)
 }
 
 # Function to check and set the height value
@@ -706,6 +705,10 @@ def bot():
     global resolution
     global mode
     global bases_arr
+    global bot_mode
+    global brake
+    global throttle
+    global flare
     
     # Set scaling factor for mouse inputs based on resolution
     scaling_factor = 1.0
@@ -713,6 +716,20 @@ def bot():
         scaling_factor = 1.333
     elif resolution == "2160":
         scaling_factor = 2.0
+
+    if bot_mode == "preset":
+        if aircraft in ["F-84F", "Su-25k", "Su-17M2", "Milan", "Mirage-5F"]:
+            brake = "No"
+            throttle = "Full"
+        elif aircraft in ["F-4E", "F-4F", "MiG-23BN"]:
+            brake = "Tap"
+            throttle = "Slow"
+        else:
+            brake = "Full"
+            throttle = "Slow"
+    else:
+        aircraft = None
+        mode = "rush"
 
     # Process the bin folder
     process_bin_folder(f"assets/bin/{resolution}")
@@ -728,7 +745,10 @@ def bot():
                 print("CONSOLE: Looking for in_queue")
 
             invite = pyautogui.locateOnScreen(f'assets/temp/invite.png', grayscale=False, confidence=0.97)
-            repaired = pyautogui.locateOnScreen(f'assets/temp/{aircraft}_repaired.png', grayscale=False, confidence=0.97)
+            if bot_mode == "preset":
+                repaired = pyautogui.locateOnScreen(f'assets/temp/{aircraft}_repaired.png', grayscale=False, confidence=0.97)
+            else: 
+                repaired = None
             trophy = pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95)
             to_hangar = pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85)
 
@@ -737,7 +757,7 @@ def bot():
                 press('esc')
 
             # if trophy is not None or to_hangar is not None or repaired is not None:
-            if trophy is not None or to_hangar is not None or repaired is not None or mode == 'slow':
+            if trophy is not None or to_hangar is not None or repaired is not None or mode == 'slow' or bot_mode == "custom":
                 press(KEYBINDS['enter'])
 
             time.sleep(0.5)
@@ -1014,7 +1034,6 @@ def bot():
             # Set new height
             if base_info and mode == "rush" and aircraft != "F-84F":
                 height = set_height(mode, map, base_info, height)
-                print("Changing height UwU")
 
             
 
@@ -1026,14 +1045,16 @@ def bot():
                 # Deploy airbrakes if close enough to the base
                 if not brake_flag and base_info[1] <= map_distance:
                     brake_flag = True
-                    if aircraft not in ["F-84F", "Su-25k", "Su-17M2", "Milan", "Mirage-5F"]:
+                    if throttle == "Slow":
+                        print("Slowing down")
+                        pyautogui.scroll(-2)
+                    if brake != "No":
                         print('CONSOLE: Deploying Airbrake')
                         press(KEYBINDS['airbrake'])
-                        pyautogui.scroll(-2)
-                        if aircraft in ["F-4E", "F-4F", "MiG-23BN"]:
+                        if brake == "Tap":
                             press(KEYBINDS['airbrake'])
                             print('CONSOLE: Retracting Airbrake')
-                        elif aircraft not in ["F-84F", "Su-25k", "Su-17M2", "Milan", "Mirage-5F"]:
+                        else:
                             # Retract airbrakes when under Mach 1
                             mach = 1.1
                             while mach <= 1.0:
@@ -1057,11 +1078,11 @@ def bot():
 
         # Pitch up
         if aircraft != "Su-25k":
-            move_mouse_by(0, -200 * scaling_factor)
+            move_mouse_by(0, int(-200 * scaling_factor))
             cruising_height = height + 1500
         else:
             cruising_height = height
-        if aircraft in ["Su-25k", "Su-17M2"]:
+        if throttle == "Slow":
             holdFor(KEYBINDS["throttleDown"], 0.1)
         time.sleep(1)
 
@@ -1349,6 +1370,7 @@ def main():
     agreement_checkbox_var = tk.BooleanVar()
     mode_checkbox_var = tk.BooleanVar()
     key_var = tk.StringVar()
+    flares_checkbox_var = tk.BooleanVar()
 
     root.protocol("WM_DELETE_WINDOW", on_window_close)
     root.geometry("800x750")
@@ -1473,6 +1495,9 @@ def main():
 
     mode_checkbox_home = ctk.CTkCheckBox(master=frame, text="Use slow method", variable=mode_checkbox_var)
     mode_checkbox_home.pack(pady=12, padx=10)
+
+    flares_checkbox_custom = ctk.CTkCheckBox(master=frame2, text="Aircraft has Flares", variable=flares_checkbox_var)
+    flares_checkbox_custom.pack(pady=12, padx=10)
 
     start_button_home = ctk.CTkButton(master=frame, text="Start Bot", command=start_bot)
     start_button_home.pack(pady=12, padx=10)

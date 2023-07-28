@@ -1,6 +1,0 @@
-
-Info:(0.79, 0.47) : 'Screenshot #0001'
-Info:(0.38, 0.06) : 'Screenshot #0002'
-Info:(0.54, 0.83) : 'Screenshot #0003'
-Info:(0.4, 0.18) : 'Screenshot #0004'
-Info:(0.64, 0.72) : 'Screenshot #0005'
