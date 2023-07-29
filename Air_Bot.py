@@ -28,6 +28,10 @@ from dotenv import load_dotenv
 import os
 from cryptography.fernet import Fernet
 import io
+import platform
+import psutil
+import cpuinfo
+import wmi
 
 # Global Variables
 resolution = None
@@ -501,7 +505,7 @@ def get_field_info():
 #########################
 
 # Change the pitch of the plane based on height and RoC
-def pitch_control(target_height, curr_height, attitude):
+def pitch_control(target_height, curr_height, attitude, zoom = False):
     height_diff = curr_height - target_height
     # Calculate the scaling factor based on the resolution
     global resolution
@@ -510,7 +514,8 @@ def pitch_control(target_height, curr_height, attitude):
         scaling_factor = 1.333
     elif resolution == "2160":
         scaling_factor = 2.0
-
+    if not zoom:
+        scaling_factor = scaling_factor/1.3
     
     if height_diff > 0:
         print(f"CONSOLE: pitch_control(): Aircraft is above target height by {height_diff}m")
@@ -607,7 +612,7 @@ def holding_pattern(height):
     move_mouse_by(-700, 0)
     time.sleep(2)
     attitude = get_attitude()
-    pitch_control(height, attitude[0], attitude[1])
+    pitch_control(height, attitude[0], attitude[1], False)
     press(KEYBINDS['ccrp_off'])
     press(KEYBINDS['ccrp'])
     base_count = count_bases()
@@ -621,18 +626,6 @@ def holding_pattern(height):
 
 # Research another modification
 def researched_mod():
-    if pyautogui.locateOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.7) != None:
-        print('CONSOLE: researched_mod(): Found OK')
-        while pyautogui.locateOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.7) != None:
-            move_mouse_to_image('assets/temp/ok.png')
-            click_mouse()
-            print("CONSOLE: researched_mod(): Trying to click OK")
-            time.sleep(0.5)
-    else:
-        print('CONSOLE: researched_mod(): Did not find OK')
-    
-    time.sleep(4)
-
     # If these are false, it is a new Aircraft
     if pyautogui.locateOnScreen('assets/temp/finish.png', grayscale=False, confidence=0.85) != None:
         print('CONSOLE: researched_mod(): Found Finish')
@@ -687,11 +680,11 @@ heights_map = {
     ('rush', 'GolanHeightsALT', 650): (lambda base_info: base_info[1] <= 0.26),
     ('rush', 'GolanHeights', 550): (lambda base_info: base_info[1] <= 0.26),
     ('rush', 'Sinai', 500): (lambda base_info: base_info[2][0] >= 0.35),
-    ('rush', 'Vietnam', 1200): (lambda base_info: base_info[2][0] >= 0.513),
-    ('rush', 'City', 300): (lambda base_info: base_info[1] <= 0.11), #check base_loc
+    ('rush', 'Vietnam', 1200): (lambda base_info: base_info[2][0] >= 0.513),#check base_loc
     ('rush', 'Spain', 550): (lambda base_info: base_info[1] <= 0.16),
     ('rush', 'SinaiALT', 300): (lambda base_info: base_info[1] <= 0.24),
-    ('rush', 'City', 300): (lambda base_info: base_info[1] <= 0.24) # check
+    ('rush', 'City', 850): (lambda base_info: base_info[2][0] <= 0.32),
+    ('rush', 'City', 1000): (lambda base_info: base_info[2][0] >= 0.32) # check
 }
 
 # Function to check and set the height value
@@ -728,23 +721,31 @@ def bot():
     elif resolution == "2160":
         scaling_factor = 2.0
 
+    # Preset parameters
     if bot_mode == "preset":
-        if aircraft in ["F-84F", "Su-25k", "Su-17M2", "Milan", "Mirage-5F"]:
-            brake = "No"
-            throttle = "Full"
-        elif aircraft in ["F-4E", "F-4F", "MiG-23BN"]:
-            brake = "Tap"
-            throttle = "Slow"
-        else:
-            brake = "Full"
-            throttle = "Slow"
-        if aircraft in ["F-84F"]:
-            airspawn = True
-        else:
-            airspawn = False
+        aircraft_settings = {
+            "F-84F": {"brake": "No", "throttle": "Full", "airspawn": True},
+            "Su-25k": {"brake": "No", "throttle": "Full", "airspawn": False},
+            "Su-17M2": {"brake": "No", "throttle": "Full", "airspawn": False},
+            "Milan": {"brake": "No", "throttle": "Full", "airspawn": False},
+            "Mirage-5F": {"brake": "No", "throttle": "Full", "airspawn": False},
+            "F-4E": {"brake": "Tap", "throttle": "Slow", "airspawn": False},
+            "F-4F": {"brake": "Tap", "throttle": "Slow", "airspawn": False},
+            "MiG-23BN": {"brake": "Tap", "throttle": "Slow", "airspawn": False},
+        }
+
+        default_settings = {"brake": "Full", "throttle": "Slow", "airspawn": False}
+
+        aircraft_data = aircraft_settings.get(aircraft, default_settings)
+        brake = aircraft_data["brake"]
+        throttle = aircraft_data["throttle"]
+        airspawn = aircraft_data["airspawn"]
+    # Custom parameters
     else:
+        airspawn = False
         aircraft = None
         mode = "rush"
+
 
     # Process the bin folder
     process_bin_folder(f"assets/bin/{resolution}")
@@ -752,14 +753,16 @@ def bot():
     while True:
         bases_arr = []
         start_loop = time.time()
+        zoom = False
+        # Hangar Loop
         while True:
-            invite = pyautogui.locateOnScreen(f'assets/temp/invite.png', grayscale=False, confidence=0.97)
             if bot_mode == "preset":
                 repaired = pyautogui.locateOnScreen(f'assets/temp/{aircraft}_repaired.png', grayscale=False, confidence=0.97)
                 if not repaired and first:
-                    print(f"CONSOLE: The {aircraft} preset does not seem to be supported for your resolution: Please submit a ticket on the Discord")
+                    print(f"CONSOLE: The {aircraft} preset does not seem to be supported for your resolution :(\nPlease submit a ticket on the Discord")
             else: 
                 repaired = None
+            invite = pyautogui.locateOnScreen(f'assets/temp/invite.png', grayscale=False, confidence=0.97)
             trophy = pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95)
             to_hangar = pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85)
 
@@ -767,18 +770,18 @@ def bot():
             if waiting_for > 600 or invite is not None:
                 press('esc')
 
+            researched_mod()
             # if trophy is not None or to_hangar is not None or repaired is not None:
             if trophy is not None or to_hangar is not None or repaired is not None or mode == 'slow' or bot_mode == "custom":
                 press(KEYBINDS['enter'])
-
+            
+            time.sleep(1)
             in_queue = pyautogui.locateOnScreen('assets/temp/in_queue.png', grayscale=False, confidence=0.95)
             if in_queue is not None:
                 break
             else:
-                print("CONSOLE: Did not find in_queue")
                 time.sleep(10)
 
-            time.sleep(0.5)
 
         first = False
         print("\n\nCONSOLE: To Battle!")
@@ -802,6 +805,7 @@ def bot():
                 map = MAPS[map_coords]
                 if map == 'City' or map == 'CityALT':
                     city = True
+                exception_flag = False
                 break
             except:
                 print(f"CONSOLE: Map not found; map_coords are {map_coords}")
@@ -929,7 +933,7 @@ def bot():
                     i += 1
                     att = get_attitude()
                     curr_height = att[0]
-                    pitch_control(height, curr_height, att[1])
+                    pitch_control(height, curr_height, att[1], zoom)
                     time.sleep(0.1)
                     target_info = get_target_info(target_location)
                     if target_info:
@@ -991,7 +995,7 @@ def bot():
                     count_bases()
                     i = 0
                 i += 1
-                pitch_control(height, attitude[0], attitude[1])
+                pitch_control(height, attitude[0], attitude[1], zoom)
             
             
             # Reduce throttle and start holding pattern procedure
@@ -1019,6 +1023,7 @@ def bot():
                 if abs(center_x - screen_center_x) < 5:
                     if base_loc == None:
                         press(KEYBINDS['zoom'])
+                        zoom = True
                         base_loc = calculate_ec_base()
                         print(f"CONSOLE: Chose Target Base with Location: {base_loc}")
                     else:
@@ -1038,23 +1043,19 @@ def bot():
                     old_base_info = base_info
                 base_info = get_base_info(base_loc)
                 if base_info == False and old_base_info[1] >= 0.07:
-                    print(f"CONSOLE: Base is gone before bombing, retargeting...")
-                    # Add holding pattern and targeting logic
-                    #base_loc = None
-                    #press(KEYBINDS["zoom"])
+                    print(f"CONSOLE: Base has been stolen, retargeting...")
+                    # Zoom out
+                    # If further than 0.3, retarget
+                    # If closer, head to holding pattern and throttle down
                 elif base_info:
                     print(f"CONSOLE: Base Distance is: {base_info[1]}")
                 elif not base_info:
                     print("CONSOLE: Base has been Destroyed")
                     break
-                    
-                    
 
             # Set new height
             if base_info and mode == "rush" and not airspawn:
                 height = set_height(mode, map, base_info, height)
-
-            
 
             # Get attitude of the aircraft
             attitude = get_attitude()
@@ -1081,9 +1082,8 @@ def bot():
                                 press(KEYBINDS['airbrake'])
                                 mach = get_mach()
                     
-
             # Maintain target altitude
-            pitch_control(height, attitude[0], attitude[1])
+            pitch_control(height, attitude[0], attitude[1], zoom)
             
         
         # After Bombing Logic
@@ -1093,11 +1093,11 @@ def bot():
         time.sleep(1)
         pyautogui.scroll(-2)
         brake_flag = False
+        zoom = False
         press(KEYBINDS['smoke'])
         
-
         # Pitch up
-        if aircraft != "Su-25k":
+        if mode == "rush":
             move_mouse_by(0, int(-200 * scaling_factor))
             cruising_height = height + 1500
         else:
@@ -1112,7 +1112,7 @@ def bot():
             field_data = get_field_info()
             # Maintain altitude
             if not brake_flag:
-                pitch_control(cruising_height, attitude[0], attitude[1])
+                pitch_control(cruising_height, attitude[0], attitude[1], zoom)
             # Aim towards Airfield
             if field_data is not None:
                 move_mouse_by(int(field_data[0] * 10 * scaling_factor), 0)
@@ -1156,25 +1156,33 @@ def bot():
                 press(KEYBINDS['enter'])
             time.sleep(1)
 
-        if pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None:
+        if pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.95) != None:
             while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None:
                 print('CONSOLE: Clicking To Hangar')
                 move_mouse_to_image('assets/temp/to_hangar.png')
                 click_mouse()
                 move_mouse_to(100, 100)
                 time.sleep(3)
-        elif pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) != None:
-            mod = researched_mod()
-            if mod == False:
-                print("CONSOLE: Plane has been Researched")
-                press('esc')
-                time.sleep(4)
-                press('esc')
-                time.sleep(4)
-                press('esc')
-            else:
-                print("CONSOLE: Modification has been Researched")
-            time.sleep(3)
+        elif pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.95) != None:
+            while pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) != None:
+                print('CONSOLE: Clicking OK')
+                move_mouse_to_image('assets/temp/ok.png')
+                click_mouse()
+                move_mouse_to(100, 100)
+                time.sleep(3)
+                
+        mod = researched_mod()
+        time.sleep(2)
+        if mod == False and pyautogui.locateCenterOnScreen('assets/temp/order.png', grayscale=False, confidence=0.85) != None:
+            print("CONSOLE: Plane has been Researched")
+            press('esc')
+            time.sleep(4)
+            press('esc')
+        elif mod == True:
+            print("CONSOLE: Modification has been Researched")
+        else:
+            print("CONSOLE: Returning to Hangar")
+        time.sleep(3)
 
 
 # Main function
@@ -1194,18 +1202,18 @@ def main():
 
 
     def check_key(key):
-        if key == "Gaijiggles":
-            return True
         # Get the user's IP address
-        ip_address = get_ip_address()
+        pc_info = get_pc_info()
 
-        if ip_address:
+        if pc_info:
             url = os.getenv('server_ip')
 
+            pc_name, pc_cpu_name = pc_info
             # JSON payload for the request
             payload = {
                 'users_key': key,
-                'users_ip': ip_address
+                'users_pc_name': pc_name,
+                'users_pc_cpu' : pc_cpu_name
             }
 
             response = requests.post(url, json=payload)
@@ -1215,21 +1223,15 @@ def main():
             return False
 
         else:
-            print("CONSOLE: Unable to retrieve the IP address")
+            messagebox.showinfo("Error", "check_key(): Unable to get PC information")
+            print("CONSOLE: Unable to retrieve PC information")
             return False
 
-    def get_ip_address():
-        # Create a socket object
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-        try:
-            sock.connect(("8.8.8.8", 80))
-            ip_address = sock.getsockname()[0]
-            return ip_address
-        except socket.error:
-            return None
-        finally:
-            sock.close()
+    def get_pc_info():
+        pc_name = platform.node()
+        pc_cpuinfo = cpuinfo.get_cpu_info()
+        pc_cpu_name = pc_cpuinfo["brand_raw"]
+        return pc_name, pc_cpu_name
 
     # Function to start the bot
     def start_bot():
@@ -1433,11 +1435,12 @@ def main():
     sidebar_button_custom.pack(pady=10, padx=10)
 
     # After here
-    logo = ctk.CTkImage(Image.open("assets/icons/icon.png"), size=[164, 139])
-    logo_label_home = ctk.CTkLabel(frame, text="", image=logo)
+    main_logo = ctk.CTkImage(Image.open("assets/icons/main_menu_icon.png"), size=[164, 139])
+    logo_label_home = ctk.CTkLabel(frame, text="", image=main_logo)
     logo_label_home.pack(pady=12, padx=10)
 
-    logo_label_custom = ctk.CTkLabel(frame2, text="", image=logo)
+    custom_logo = ctk.CTkImage(Image.open("assets/icons/custom_menu_icon.png"), size=[164, 139])
+    logo_label_custom = ctk.CTkLabel(frame2, text="", image=custom_logo)
     logo_label_custom.pack(pady=12, padx=10)
 
     label_home = ctk.CTkLabel(master=frame, text="Nicks War Thunder Air Bot 1.0\nMain Menu", font=("Roboto", 24))
@@ -1448,13 +1451,13 @@ def main():
 
     # Create the setup instructions label
     instructions_label_home = ctk.CTkLabel(master=frame,
-                                      text="Setup Instructions:\n1. Check the KeyBinds file and ensure that your keybinds are set up correctly\n2. Go to Hangar and have the appropriate aircraft selected\n3. Select 'Air Realistic Battles'\n4. Ensure you are using Red and Blue default colors\n\nTo end the program, press and hold 'q' at any time",
+                                      text="Preset Setup Instructions:\n1. Check the KeyBinds file and ensure that your keybinds are set up correctly\n2. Go to Hangar and have the appropriate aircraft selected\n3. Select 'Air Realistic Battles'\n4. Ensure you are using Red and Blue default colors\n\nTo end the program, press and hold 'q' at any time",
                                       font=("Roboto", 15))
     instructions_label_home.pack(pady=12, padx=10)
 
     # Create the setup instructions label
     instructions_label_custom = ctk.CTkLabel(master=frame2,
-                                      text="Custom Setup Instructions:\n1. Select the options relevant to your Aircraft\n2. Go to Hangar and have the appropriate aircraft selected\n3. Select 'Air Realistic Battles'\n4. Ensure you are using Red and Blue default colors\n\nTo end the program, press and hold 'q' at any time",
+                                      text="Custom Setup Instructions:\n1. In the Main Menu, input your Activation Key\n2. Select the behavior options relevant to your Aircraft\n3. Go to Hangar and have the appropriate aircraft selected\n4. Select 'Air Realistic Battles'\n5. Ensure you are using Red and Blue default colors\n\nTo end the program, press and hold 'q' at any time",
                                       font=("Roboto", 15))
     instructions_label_custom.pack(pady=12, padx=10)
 
