@@ -524,7 +524,7 @@ def pitch_control(target_height, curr_height, attitude, zoom = False):
     else:
         print(f"CONSOLE: pitch_control(): Aircraft is descending by {-attitude}m/s")
 
-    if height_diff > 200:
+    if height_diff > 450:
         if attitude > 15.0:
             move_mouse_by(0, int(200 * scaling_factor))
         elif attitude > 0.0:
