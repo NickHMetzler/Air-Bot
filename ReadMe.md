@@ -9,7 +9,7 @@
    - Automatically Upgrades Planes.
 
 ## Working Vehicles/Preset Aircraft
-   The List of Supported Preset Aircraft are:
+   ### Supported Preset Aircraft
    - Kfir Canard (IS)
    - F-4F (GR)
    - MiG-23BN (GR)
@@ -21,8 +21,10 @@
    **If you would like to request an Aircraft to be added to the preset list, please send me a message on my [Discord Server](https://discord.gg/pD368UGSJ6).**
 
    ### Custom Mode/Other Aircraft
-      The ability to use any Aircraft and set custom parameters using the base rush logic has been added in a new tab!
-      **Note: Planes are required to have [CCRP](https://wiki.warthunder.com/Ballistic_Computer#List_of_vehicles_with_Ballistic_Computers).**
+   - The ability to use any Aircraft and set custom parameters using the base rush logic has been added in a new tab!  
+
+**Note: Planes are required to have [CCRP](https://wiki.warthunder.com/Ballistic_Computer#List_of_vehicles_with_Ballistic_Computers).**
+
 
 ## Supported Resolutions
    - 1920x1080 (In Testing)
@@ -56,8 +58,7 @@
    ### Setting Program Keybinds
    1. Open the `data/keybinds.txt` file in a text editor.
    2. Review the default keybinds provided and modify them as needed to match your preferred settings in game.
-   3. Set `Switch Radar/IRST search on/off` to your preferred Radar keybind.
-   4. Save the `data/keybinds.txt` file.
+   3. Save the `data/keybinds.txt` file.
 
    ### Setting Up Auto Activation Key
    1. Open the `.env` file in a text editor.

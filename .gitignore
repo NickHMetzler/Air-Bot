@@ -1,14 +1,1 @@
-text_encryptor.py
-image_encryptor.py
-assets/screenshots
-data/distances.txt
-data/heights.txt
-.env
-notes.txt
-assets/screenshots/main_screenshot.png*
-app.py
-assets/temp
-assets/temp/tempfile.txt*
-Xenon
 output
-sensitive

@@ -1,0 +1,21 @@
+{
+'Afghanistan' : 0.18,
+'GolanHeights' : 0.075,
+'GolanHeightsALT' : 0.085,
+'Sinai' : 0.07,
+'SinaiALT' : 0.085,
+'Spain' : 0.085,
+'SpainALT' : 0.087,
+'SpainEC' : 0.09,
+'Vietnam' : 0.08,
+'VietnamALT' : 0.075,
+'VietnamEC' : 0.2,
+'RockyCanyon' : 0.2,
+'RockyCanyonALT' : 0.2,
+'City' : 0.15,
+'CityALT' : 0.15,
+'Pyrenees' : 0.13,
+'PyreneesALT' : 0.13,
+'LadogaLeft' : 0.15,
+'BerlinRight' : 0.15
+}

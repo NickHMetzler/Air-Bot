@@ -23,15 +23,13 @@ from tkinter import messagebox
 import customtkinter as ctk
 import datetime
 from PIL import Image
-import socket
 from dotenv import load_dotenv
 import os
 from cryptography.fernet import Fernet
 import io
 import platform
-import psutil
 import cpuinfo
-import wmi
+import multiprocessing
 
 # Global Variables
 resolution = None
@@ -217,7 +215,7 @@ ctypes.pointer(extra) )
 #######################
 
 def game_over():
-    if pyautogui.locateOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.95) == None and pyautogui.locateOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.95) == None:
+    if pyautogui.locateOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.7) == None and pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.95) == None and pyautogui.locateOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.95) == None and pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.95) == None:
         return False
     else:
         return True
@@ -527,36 +525,40 @@ def pitch_control(target_height, curr_height, attitude, zoom = False):
         print(f"CONSOLE: pitch_control(): Aircraft is descending by {-attitude}m/s")
 
     if height_diff > 200:
-        if attitude > -5.0:
+        if attitude > 15.0:
+            move_mouse_by(0, int(200 * scaling_factor))
+        elif attitude > 0.0:
+            move_mouse_by(0, int(130 * scaling_factor))
+        elif attitude > -5.0:
             move_mouse_by(0, int(60 * scaling_factor))
         elif attitude > -10.0:
             move_mouse_by(0, int(30 * scaling_factor))
         elif attitude > -20.0:
-            move_mouse_by(0, int(10 * scaling_factor))
+            move_mouse_by(0, int(15 * scaling_factor))
     elif height_diff > 0:
         if attitude > 20.0:
-            move_mouse_by(0, int(90 * scaling_factor))
+            move_mouse_by(0, int(130 * scaling_factor))
         elif attitude > 10.0:
             move_mouse_by(0, int(60 * scaling_factor))
         elif attitude > 5.0:
-            move_mouse_by(0, int(30 * scaling_factor))
+            move_mouse_by(0, int(25 * scaling_factor))
+        elif attitude > 0.0:
+            move_mouse_by(0, int(15 * scaling_factor))
     elif height_diff < 0:
         if attitude < -40.0:
-            move_mouse_by(0, int(-1080 * scaling_factor))
-        elif attitude < -35.0:
-            move_mouse_by(0, int(-720 * scaling_factor))
+            move_mouse_by(0, int(-250 * scaling_factor))
         elif attitude < -30.0:
-            move_mouse_by(0, int(-360 * scaling_factor))
+            move_mouse_by(0, int(-200 * scaling_factor))
         elif attitude < -25.0:
-            move_mouse_by(0, int(-180 * scaling_factor))
+            move_mouse_by(0, int(-280 * scaling_factor))
         elif attitude < -20.0:
-            move_mouse_by(0, int(-90 * scaling_factor))
+            move_mouse_by(0, int(-130 * scaling_factor))
         elif attitude < -10.0:
             move_mouse_by(0, int(-60 * scaling_factor))
         elif attitude < -5.0:
-            move_mouse_by(0, int(-30 * scaling_factor))
-        elif attitude < 0.5:
-            move_mouse_by(0, int(-10 * scaling_factor))
+            move_mouse_by(0, int(-25 * scaling_factor))
+        elif attitude < 0.0:
+            move_mouse_by(0, int(-15 * scaling_factor))
 
 
 
@@ -624,39 +626,54 @@ def holding_pattern(height):
 
     
 
-# Research another modification
-def researched_mod():
+# Research Protocol
+def research_protocol():
+    researched = False
     # If these are false, it is a new Aircraft
     if pyautogui.locateOnScreen('assets/temp/finish.png', grayscale=False, confidence=0.85) != None:
-        print('CONSOLE: researched_mod(): Found Finish')
+        print('CONSOLE: Found Finish for Aircraft Modification')
         while pyautogui.locateOnScreen('assets/temp/finish.png', grayscale=False, confidence=0.7) != None:
             move_mouse_to_image('assets/temp/finish.png')
             click_mouse()
-            print("CONSOLE: researched_mod(): Trying to click Finish")
+            print("CONSOLE: Trying to click Finish")
             time.sleep(0.5)
+        print("CONSOLE: Modification has been Researched")
+        researched = True
     elif pyautogui.locateOnScreen('assets/temp/spend.png', grayscale=False, confidence=0.85) != None:
-        print('CONSOLE: researched_mod(): Found Spend')
+        print('CONSOLE: Found Spend for Aircraft Modification')
         while pyautogui.locateOnScreen('assets/temp/spend.png', grayscale=False, confidence=0.7) != None:
             move_mouse_to_image('assets/temp/spend.png')
             click_mouse()
-            print("CONSOLE: researched_mod(): Trying to click Spend")
+            print("CONSOLE: Trying to click Spend")
             time.sleep(0.5)
-    else:
-        print('CONSOLE: researched_mod(): Did not find Finish or Spend\nCONSOLE: researched_mod(): Returning False for Modification')
-        return False
+        print("CONSOLE: Modification has been Researched")
+        researched = True
 
     time.sleep(4)
 
     # All modifications in a row are researched
     if pyautogui.locateOnScreen('assets/temp/all_mods.png', grayscale=False, confidence=0.7) != None:
-        print('CONSOLE: researched_mod(): Found all_mods')
+        print('CONSOLE: Found all_mods for Aircraft Modification')
         while pyautogui.locateOnScreen('assets/temp/all_mods.png', grayscale=False, confidence=0.7) != None:
             move_mouse_to_image('assets/temp/all_mods.png')
             click_mouse()
-            print("CONSOLE: researched_mod(): Trying to click all_mods")
+            print("CONSOLE: Trying to click all_mods")
             time.sleep(0.5)
     else:
-        print('CONSOLE: researched_mod(): Did not find all_mods')
+        print('CONSOLE: Did not find all_mods')
+
+    # A plane has been reserached
+    if pyautogui.locateCenterOnScreen('assets/temp/order.png', grayscale=False, confidence=0.85) != None:
+        print("CONSOLE: Plane has been Researched")
+        press('esc')
+        time.sleep(4)
+        press('esc')
+        researched = True
+
+    return researched
+    
+
+    
 
 # End Program
 def end_program():
@@ -684,7 +701,8 @@ heights_map = {
     ('rush', 'Spain', 550): (lambda base_info: base_info[1] <= 0.16),
     ('rush', 'SinaiALT', 300): (lambda base_info: base_info[1] <= 0.24),
     ('rush', 'City', 850): (lambda base_info: base_info[2][0] <= 0.32),
-    ('rush', 'City', 1000): (lambda base_info: base_info[2][0] >= 0.32) # check
+    ('rush', 'City', 1000): (lambda base_info: base_info[2][0] >= 0.32),
+    ('rush', 'VietnamALT', 1200): (lambda base_info: base_info[2][0] <= 0.390249) 
 }
 
 # Function to check and set the height value
@@ -726,7 +744,7 @@ def bot():
         aircraft_settings = {
             "F-84F": {"brake": "No", "throttle": "Full", "airspawn": True},
             "Su-25k": {"brake": "No", "throttle": "Full", "airspawn": False},
-            "Su-17M2": {"brake": "No", "throttle": "Full", "airspawn": False},
+            "Su-17M2": {"brake": "No", "throttle": "Slow", "airspawn": False},
             "Milan": {"brake": "No", "throttle": "Full", "airspawn": False},
             "Mirage-5F": {"brake": "No", "throttle": "Full", "airspawn": False},
             "F-4E": {"brake": "Tap", "throttle": "Slow", "airspawn": False},
@@ -735,7 +753,6 @@ def bot():
         }
 
         default_settings = {"brake": "Full", "throttle": "Slow", "airspawn": False}
-
         aircraft_data = aircraft_settings.get(aircraft, default_settings)
         brake = aircraft_data["brake"]
         throttle = aircraft_data["throttle"]
@@ -770,7 +787,9 @@ def bot():
             if waiting_for > 600 or invite is not None:
                 press('esc')
 
-            researched_mod()
+            if research_protocol():
+                time.sleep(2)
+            
             # if trophy is not None or to_hangar is not None or repaired is not None:
             if trophy is not None or to_hangar is not None or repaired is not None or mode == 'slow' or bot_mode == "custom":
                 press(KEYBINDS['enter'])
@@ -1049,6 +1068,9 @@ def bot():
                     # If closer, head to holding pattern and throttle down
                 elif base_info:
                     print(f"CONSOLE: Base Distance is: {base_info[1]}")
+                    if base_info[0] >= 160:
+                        print("CONSOLE: Base has been Destroyed")
+                        break
                 elif not base_info:
                     print("CONSOLE: Base has been Destroyed")
                     break
@@ -1077,7 +1099,7 @@ def bot():
                         else:
                             # Retract airbrakes when under Mach 1
                             mach = 1.1
-                            while mach <= 1.0:
+                            while mach >= 1.0:
                                 print('CONSOLE: Retracting Airbrake')
                                 press(KEYBINDS['airbrake'])
                                 mach = get_mach()
@@ -1098,7 +1120,7 @@ def bot():
         
         # Pitch up
         if mode == "rush":
-            move_mouse_by(0, int(-200 * scaling_factor))
+            move_mouse_by(0, int(-150 * scaling_factor))
             cruising_height = height + 1500
         else:
             cruising_height = height
@@ -1138,6 +1160,10 @@ def bot():
 
         while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.85) == None and pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) == None:
             print('CONSOLE: Waiting on To Hangar/Return To Hangar/OK')
+            if pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.85) != None:
+                print('CONSOLE: Battle Trophy')
+                press(KEYBINDS['enter'])
+            time.sleep(2)
 
         # Return to Hangar appears
         if pyautogui.locateCenterOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.85) != None:
@@ -1171,17 +1197,7 @@ def bot():
                 move_mouse_to(100, 100)
                 time.sleep(3)
                 
-        mod = researched_mod()
-        time.sleep(2)
-        if mod == False and pyautogui.locateCenterOnScreen('assets/temp/order.png', grayscale=False, confidence=0.85) != None:
-            print("CONSOLE: Plane has been Researched")
-            press('esc')
-            time.sleep(4)
-            press('esc')
-        elif mod == True:
-            print("CONSOLE: Modification has been Researched")
-        else:
-            print("CONSOLE: Returning to Hangar")
+        research_protocol()
         time.sleep(3)
 
 
@@ -1242,7 +1258,8 @@ def main():
         global bot_mode
         global brake
         global throttle
-        if bot_mode == "preset" and agreement_checkbox_var.get() and check_key(key) and resolution is not None and aircraft is not None:
+        valid_key = check_key(key)
+        if bot_mode == "preset" and agreement_checkbox_var.get() and valid_key and resolution is not None and aircraft is not None:
             # Prompt the user to Alt + Tab to War Thunder
             messagebox.showinfo("Alert", "Please Alt + Tab to War Thunder")
             root.destroy()
@@ -1286,7 +1303,7 @@ def main():
                     delete_temp_files()
                     end_program()
 
-        elif bot_mode == "custom" and agreement_checkbox_var.get() and check_key(key) and resolution is not None and throttle is not None and brake is not None:
+        elif bot_mode == "custom" and agreement_checkbox_var.get() and valid_key and resolution is not None and throttle is not None and brake is not None:
             # Prompt the user to Alt + Tab to War Thunder
             messagebox.showinfo("Alert", "Please Alt + Tab to War Thunder")
             root.destroy()
@@ -1324,7 +1341,7 @@ def main():
                     delete_temp_files()
                     end_program()
         
-        elif not check_key(key):
+        elif not valid_key:
             messagebox.showinfo("Error", "Incorrect Key")
         elif resolution is None:
             messagebox.showinfo("Error", "Please Choose a Resolution")
@@ -1541,7 +1558,9 @@ def main():
 
 
 # Start the main thread
+# Start the main thread
 if __name__ == "__main__":
+    # When running as a Python script, just call the main function as you're doing currently
+    multiprocessing.freeze_support()
     main()
-     
             
