@@ -606,6 +606,36 @@ def holdFor(key, seconds):
     time.sleep(seconds) 
     release(key)
 
+chat_phrases = [
+    "The ocean always forgives, bruddah.",
+    "In the face of a storm, find your balance.",
+    "Let the waves carry your troubles away.",
+    "Aloha ke Akua - Love of God.",
+    "Live life with the spirit of 'ohana - family.",
+    "The best way to find yourself is to get lost in nature.",
+    "Respect the aina (land) and it will take care of you.",
+    "Be like water, my friends, go with the flow.",
+    "The best surfer out there is the one having the most fun.",
+    "Fear is like an undertow, ride the wave and overcome it.",
+    "Find joy in every ride, whether big or small.",
+    "Happiness is a wave, catch it when it comes.",
+    "Embrace the aloha spirit and spread love wherever you go.",
+    "The rhythm of the ocean is the song of life.",
+    "Wagwan mandem",
+    "Back to the event grind...",
+    "Never drink the milk of a coconut you found in the dark"
+]
+
+
+# Made for typing messages
+def typer(phrase=None):
+    if phrase == None:
+        phrase = random.choice(chat_phrases).lower()
+    for key in phrase:
+        hold(key)
+        time.sleep(np.random.uniform(0.1,0.2))  # Fixed sleep time of 0.2 seconds (200 milliseconds)
+        release(key)
+
 #########################
 #   General Functions   #
 #########################
@@ -864,7 +894,15 @@ def bot():
             holdFor(KEYBINDS['throttleUp'], 4)
             move_mouse_by(0, -pitch_value)
             press(KEYBINDS['radar'])
-
+            
+            ground = get_attitude()[0]
+            
+            chat_check = random.randint(0, 2)
+            if chat_check == 0:
+                press('enter')
+                press('tab')
+                typer(None)
+                press('enter')
             # Retract gear when taken off
             ground = get_attitude()[0]
             height = ground
