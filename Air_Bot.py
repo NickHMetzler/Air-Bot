@@ -601,7 +601,7 @@ def get_enemy_field_info():
         if field:
             field_x = round((field["sx"] + field["ex"]) / 2, 2)
             field_y = round((field["sy"] + field["ey"]) / 2, 2)
-            return get_target_info(field_x, field_y)
+            return get_target_info((field_x, field_y))
             
 
 #########################
@@ -1247,10 +1247,11 @@ def bot():
             brake_flag = False
             zoom = False
 
-            print("CONSOLE: Heading towards Airfield")
+            
             if suicide:
-                pass
+                print("CONSOLE: Heading towards Enemy Airfield")
             else:
+                print("CONSOLE: Heading towards Friendly Airfield")
                 time.sleep(1)
                 move_mouse_by(int(-800 * scaling_factor), 0)
                 time.sleep(1)
@@ -1263,8 +1264,12 @@ def bot():
             
             # Pitch up
             if mode == "rush":
-                move_mouse_by(int(-800 * scaling_factor), int(-150 * scaling_factor))
-            cruising_height = HEIGHTS[map_name] + 200
+                if suicide:
+                    move_mouse_by(0, int(-150 * scaling_factor))
+                    cruising_height = HEIGHTS[map_name] + 1500
+                else:
+                    move_mouse_by(int(-800 * scaling_factor), int(-150 * scaling_factor))
+                    cruising_height = HEIGHTS[map_name] + 200
             if throttle == "Slow":
                 holdFor(KEYBINDS["throttleDown"], 0.1)
             
@@ -1274,7 +1279,7 @@ def bot():
         while not game_over() and spawned_in():
             attitude = get_attitude()
             if suicide:
-                field_data = get_enemy_field_info(map_name)
+                field_data = get_enemy_field_info()
             else:
                 field_data = get_friendly_field_info(map_name)
             # Aim towards Airfield
@@ -1580,10 +1585,10 @@ def main():
     mode_checkbox_var = tk.BooleanVar()
     key_var = tk.StringVar()
     flares_checkbox_var = tk.BooleanVar()
-    sucide_checkbox_var = tk.BooleanVar()
+    suicide_checkbox_var = tk.BooleanVar()
 
     root.protocol("WM_DELETE_WINDOW", on_window_close)
-    root.geometry("800x750")
+    root.geometry("800x800")
     root.title("War Thunder Air Bot 1.0")
 
     # Create the sidebar
@@ -1704,10 +1709,10 @@ def main():
                                         variable=airbrake_var_custom)
     airbrake_box_custom.pack(padx=20, pady=10)
 
-    suicide_checkbox_home = ctk.CTkCheckBox(master=frame, text="Aircraft heads to enemy Airfield?\n(More detectable)", variable=suicide_checkbox_var)
+    suicide_checkbox_home = ctk.CTkCheckBox(master=frame, text="Aircraft heads to enemy Airfield?\n              (More detectable)", variable=suicide_checkbox_var)
     suicide_checkbox_home.pack(pady=12, padx=10)
 
-    suicide_checkbox_custom = ctk.CTkCheckBox(master=frame2, text="Aircraft heads to enemy Airfield?\n(More detectable)", variable=suicide_checkbox_var)
+    suicide_checkbox_custom = ctk.CTkCheckBox(master=frame2, text="Aircraft heads to enemy Airfield?\n              (More detectable)", variable=suicide_checkbox_var)
     suicide_checkbox_custom.pack(pady=12, padx=10)
 
     mode_checkbox_home = ctk.CTkCheckBox(master=frame, text="Use slow method", variable=mode_checkbox_var)
