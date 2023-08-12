@@ -623,7 +623,15 @@ chat_phrases = [
     "The rhythm of the ocean is the song of life.",
     "Wagwan mandem",
     "Back to the event grind...",
-    "Never drink the milk of a coconut you found in the dark"
+    "Never drink the milk of a coconut you found in the dark",
+    "ESKETIIIIT",
+    "The most important races are won in the ocean of the soul.",
+    "You can paint the coconut shell, but you can’t change the milk inside.",
+    "When pilots don't ride, potatoes ain't fried",
+    "The coconut, though hard and brown, in the spring gives milk to the sand, after being kissed by the green water.",
+    "Fly the kite; it must not fly you.",
+    "All hail the Snail",
+    "Every plane has to come to the ground at some point."
 ]
 
 
