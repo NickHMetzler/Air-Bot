@@ -111,6 +111,13 @@ with open("data/chat_phrases.txt", "r") as file:
 with open("data/pyrenees_phrases.txt", "r") as file:
     PYRENEES_PHRASES = file.read().splitlines()
 
+# Check if the lists are empty and assign two blank strings if they are
+if not CHAT_PHRASES:
+    CHAT_PHRASES = ["", ""]
+
+if not PYRENEES_PHRASES:
+    PYRENEES_PHRASES = ["", ""]
+
 # Set the path to Tesseract OCR executable (change this if necessary)
 pytesseract.pytesseract.tesseract_cmd = r'Tesseract-OCR/tesseract.exe'
 
