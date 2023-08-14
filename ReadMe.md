@@ -27,8 +27,10 @@
 
 
 ## Supported Resolutions
-   - 1920x1080 (In Testing)
+   - 1920x1080
+      - UI scale: "Compact" or 73%
    - 2560x1080 
+      - UI scale: "Small" or 68%
    - 2560x1440
 
  **If your resolution is not supported, please send me a message on my [Discord Server](https://discord.gg/pD368UGSJ6).**
@@ -64,6 +66,13 @@
    1. Open the `.env` file in a text editor.
    2. After the = on the line with `activation_key` paste in your activation key.
    3. Save the `.env` file.
+
+   ### Setting Up Chat Phrases
+   1. Open the `data/chat_phrases.txt` file in a text editor.
+   2. Paste or type in what you want the bot to say at the beginning of each match. Each line is it's own phrase.
+   3. Save the `data/chat_phrases.txt` file.
+
+   **Chat Phrases only accept Alphanumeric Characters and commas/periods**
 
    ### Keybind equivalents keybinds.txt vs in game
    - Keybind `bomb` in game is `Drop bomb series`.
