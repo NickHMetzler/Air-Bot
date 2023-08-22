@@ -974,10 +974,10 @@ def bot():
             print('CONSOLE: Waiting to Spawn on Airfield')
             while not spawned_in():
                 pass
-            print('CONSOLE: Spawned in')
-
+            print('CONSOLE: Spawned in\nCONSOLE: Activating CCRP')
             # Throttle up, then pitch up
-            holdFor(KEYBINDS['throttleUp'], 2)            
+            holdFor(KEYBINDS['throttleUp'], 2)
+            press(KEYBINDS['ccrp'])            
             move_mouse_by(0, -pitch_value)
             press(KEYBINDS['radar'])
             
@@ -1003,8 +1003,6 @@ def bot():
             
             if mode == 'rush':
             # Choose base target
-                print('CONSOLE: Activating CCRP')
-                press(KEYBINDS['ccrp'])
                 while pyautogui.locateOnScreen('assets/temp/centreline.png', grayscale=False, confidence=0.7) == None and not game_over() and spawned_in() and height < HEIGHTS[map_name]/4:
                     height = get_attitude()[0]
                     time.sleep(0.1)
@@ -1133,7 +1131,9 @@ def bot():
             if target_info:
                 distance = target_info[1]
                 print(f"CONSOLE: Holding Pattern Angle: {target_info[0]}\nCONSOLE: Holding Pattern Distance: {distance}\nCONSOLE: Heading towards Holding Pattern Point...")
-
+            else:
+                distance = 1
+                
             i = 0
             # Fly towards holding pattern location
             while distance > 0.05 and not game_over() and spawned_in():

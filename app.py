@@ -24,10 +24,12 @@ def verify():
     _users_pc_name = _json['users_pc_name']
     _users_pc_cpu = _json['users_pc_cpu']
 
+    
     # Get the current datetime
     current_datetime = datetime.datetime.now()
     _users_datetime = current_datetime.strftime(r'%Y-%m-%d %H:%M:%S')
     print(f"SERVER: Verifying User Data:\n        Key: {_users_key}\n        PC Name: {_users_pc_name}\n        CPU: {_users_pc_cpu}")
+
     
     # validate the received values
     if _users_key and _users_pc_name and _users_pc_cpu:
