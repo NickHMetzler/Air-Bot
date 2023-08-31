@@ -624,7 +624,7 @@ def holding_pattern(height):
     press(KEYBINDS['ccrp'])
     base_count = count_bases()
     time.sleep(1)
-    if pyautogui.locateOnScreen('assets/temp/centreline.png', grayscale=False, confidence=0.6) == None and base_count >= 2:
+    if pyautogui.locateOnScreen('assets/temp/centreline.png', grayscale=False, confidence=0.7) != None and base_count >= 1:
         return True
     else:
         return False
@@ -922,6 +922,13 @@ def bot():
                 press('esc')
 
             if research_protocol():
+                time.sleep(2)
+
+            if pyautogui.locateOnScreen('assets/temp/decal.png', grayscale=False, confidence=0.85) != None:
+                print('CONSOLE: Decal')
+                move_mouse_to_image('assets/temp/decal.png')
+                click_mouse()
+                move_mouse_to(100, 100)
                 time.sleep(2)
             
             # if trophy is not None or to_hangar is not None or repaired is not None:
@@ -1270,15 +1277,19 @@ def bot():
                 press('4')
             
             # Pitch up
-            if mode == "rush":
-                if suicide:
-                    move_mouse_by(0, int(-150 * scaling_factor))
-                    cruising_height = HEIGHTS[map_name] + 1500
-                else:
-                    move_mouse_by(int(-800 * scaling_factor), int(-150 * scaling_factor))
-                    cruising_height = HEIGHTS[map_name] + 200
+            if mode == "slow":
+                cruising_height = height
+                holdFor(KEYBINDS["throttleDown"], 0.1)
+            elif suicide:
+                move_mouse_by(0, int(-150 * scaling_factor))
+                cruising_height = HEIGHTS[map_name] + 1500
+            else:
+                move_mouse_by(int(-800 * scaling_factor), int(-150 * scaling_factor))
+                cruising_height = HEIGHTS[map_name] + 200
+
             if throttle == "Slow":
                 holdFor(KEYBINDS["throttleDown"], 0.1)
+                
             
             final = False
 
@@ -1289,8 +1300,11 @@ def bot():
                 field_data = get_enemy_field_info()
             else:
                 field_data = get_friendly_field_info(map_name)
+
+            if not suicide and not brake_flag:
+                pitch_control(cruising_height, attitude[0], attitude[1], zoom, final)
             # Aim towards Airfield
-            pitch_control(cruising_height, attitude[0], attitude[1], zoom, final)
+            
             if field_data is not None:
                 distance_to_airfield = field_data[1]
                 if distance_to_airfield >= 0.04:
@@ -1315,7 +1329,7 @@ def bot():
                         press('3')
                 elif suicide and not brake_flag and distance_to_airfield <= 0.12:
                     press(KEYBINDS['airbrake'])
-                    move_mouse_by(int(300 * scaling_factor),0)
+                    move_mouse_by(0, int(cruising_height))
                     hold(KEYBINDS['throttleDown'])
                     brake_flag = True
                 if attitude[0] < cruising_height + 200:
@@ -1356,6 +1370,12 @@ def bot():
             if pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.85) != None:
                 print('CONSOLE: Battle Trophy')
                 press(KEYBINDS['enter'])
+            if pyautogui.locateOnScreen('assets/temp/decal.png', grayscale=False, confidence=0.85) != None:
+                print('CONSOLE: Decal')
+                move_mouse_to_image('assets/temp/decal.png')
+                click_mouse()
+                move_mouse_to(100, 100)
+                time.sleep(2)
             time.sleep(1)
 
         if pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.95) != None:
