@@ -1301,7 +1301,7 @@ def bot():
             else:
                 field_data = get_friendly_field_info(map_name)
 
-            if not suicide and not brake_flag:
+            if not brake_flag:
                 pitch_control(cruising_height, attitude[0], attitude[1], zoom, final)
             # Aim towards Airfield
             
@@ -1327,12 +1327,12 @@ def bot():
                         press('t')
                         press('4')
                         press('3')
-                elif suicide and not brake_flag and distance_to_airfield <= 0.12:
+                elif suicide and not brake_flag and distance_to_airfield <= 0.04:
                     press(KEYBINDS['airbrake'])
-                    move_mouse_by(0, int(cruising_height))
+                    move_mouse_by(0, int(attitude[0]/4))
                     hold(KEYBINDS['throttleDown'])
                     brake_flag = True
-                if attitude[0] < cruising_height + 200:
+                if not suicide and attitude[0] < cruising_height + 200:
                     final = True
 
             # J out if 10 minutes have passed
