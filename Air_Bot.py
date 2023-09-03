@@ -23,6 +23,7 @@ from tkinter import messagebox
 import customtkinter as ctk
 import datetime
 from PIL import Image
+import dotenv
 from dotenv import load_dotenv
 import os
 from cryptography.fernet import Fernet
@@ -39,6 +40,8 @@ throttle = None
 brake = None
 slope_es = None
 suicide = False
+pitch_num = 1.0
+dotenv_path = ".env"
 
 # Allow the use of relative paths
 os.chdir(os.path.dirname(__file__))
@@ -72,12 +75,11 @@ KEYS = eval(contents)
 cipher = Fernet(decryption_key)
 
 # Cruising Heights for each Map
-with open('data/heights_encrypted.txt', 'rb') as file:
-    encrypted_contents = file.read()
-    decrypted_contents = cipher.decrypt(encrypted_contents)
-
+with open('data/heights.txt', 'rb') as file:
+    contents = file.read()
+    
 # Evaluate the contents as Python code
-HEIGHTS = eval(decrypted_contents)
+HEIGHTS = eval(contents)
 
 # Bombing Distances for each Map
 with open('data/distances_encrypted.txt', 'rb') as file:
@@ -634,6 +636,7 @@ def pitch_control(target_height, curr_height, attitude, zoom = False, final = Fa
     height_diff = curr_height - target_height
     # Calculate the scaling factor based on the resolution
     global resolution
+    global pitch_num
     scaling_factor = 1.0
     if resolution == "1440":
         scaling_factor = 1.333
@@ -868,6 +871,7 @@ def bot():
     global throttle
     global flare
     global suicide
+    global pitch_num
 
     # Set scaling factor for mouse inputs based on resolution
     scaling_factor = 1.0
@@ -877,7 +881,7 @@ def bot():
         scaling_factor = 2.0
     
     # Pitch values
-    pitch_value = int(200 * scaling_factor)
+    pitch_value = int(pitch_num * 200 * scaling_factor)
     downVal = int(pitch_value/8)
 
     # Preset parameters
@@ -1407,7 +1411,10 @@ def main():
 
     # Function to update the variable when the text changes
     def update_key_var(event):
-        key_var.set(key_entry_home.get())
+        global dotenv_path
+        key_str = key_entry_home.get()
+        key_var.set(key_str)
+        dotenv.set_key(dotenv_path, "activation_key", key_str)
     
     def key_exists(key):
         key_var.set(key)
@@ -1455,6 +1462,7 @@ def main():
         global brake
         global throttle
         global suicide
+        global dotenv_path
         valid_key = check_key(key)
         if bot_mode == "preset" and agreement_checkbox_var.get() and valid_key and resolution is not None and aircraft is not None:
             # Prompt the user to Alt + Tab to War Thunder
@@ -1471,8 +1479,10 @@ def main():
 
             if suicide_checkbox_var.get():
                 suicide = True
+                dotenv.set_key(dotenv_path, "suicide", "1")
             else:
                 suicide = False
+                dotenv.set_key(dotenv_path, "suicide", "0")
 
             # Create a thread for the bot
             bot_thread = threading.Thread(target=bot)
@@ -1559,7 +1569,6 @@ def main():
             messagebox.showinfo("Error", "Something went wrong")
     
     def choose_resolution(choice):
-        print("Resolution currently chosen is: ", choice)
         resolutions = {
             '1920x1080': "1080",
             '2560x1080': "1080uw",
@@ -1567,7 +1576,11 @@ def main():
             '3840x2160': "2160"
         }
         global resolution
+        global dotenv_path
+        resolution_box_settings.set(choice)
         resolution = resolutions[choice]
+        dotenv.set_key(dotenv_path, "resolution", choice)
+        
 
     def choose_aircraft(choice):
         print("Aircraft Chosen: ", choice)
@@ -1615,7 +1628,7 @@ def main():
     suicide_checkbox_var = tk.BooleanVar()
 
     root.protocol("WM_DELETE_WINDOW", on_window_close)
-    root.geometry("800x800")
+    root.geometry("800x700")
     root.title("War Thunder Air Bot 1.0")
 
     # Create the sidebar
@@ -1629,32 +1642,47 @@ def main():
     image_path_custom = "assets/icons/wrench.png"
     sidebar_image_custom = ctk.CTkImage(Image.open(image_path_custom), size=[30, 30])
 
+    # Load the image for the button
+    image_path_settings = "assets/icons/gear.png"
+    sidebar_image_settings = ctk.CTkImage(Image.open(image_path_settings), size=[35, 35])
+
+    # Initialize different screens
     frame = ctk.CTkFrame(master=root)
-
     frame2 = ctk.CTkFrame(master=root)
+    frame3 = ctk.CTkFrame(master=root)
 
-    # Function to handle the button click event
+    # Change Screen Functions
     def change_to_home():
         global bot_mode
         frame.pack(pady=20, padx=20, fill="both", expand=True)
         frame2.pack_forget()
+        frame3.pack_forget()
         bot_mode = "preset"
 
     def change_to_custom():
         global bot_mode
         frame2.pack(pady=20, padx=20, fill="both", expand=True)
         frame.pack_forget()
+        frame3.pack_forget()
         bot_mode = "custom"
+
+    def change_to_settings():
+        frame3.pack(pady=20, padx=20, fill="both", expand=True)
+        frame.pack_forget()
+        frame2.pack_forget()
+        frame.pack_forget()
     
-    # Add a button to the sidebar with the image
+    # SideBar Buttons
     sidebar_button_home = ctk.CTkButton(master=sidebar, text="", image=sidebar_image_home, command=change_to_home, width=65, height=60)
     sidebar_button_home.pack(pady=10, padx=10)
 
-    # Add a button to the sidebar with the image
     sidebar_button_custom = ctk.CTkButton(master=sidebar, text="", image=sidebar_image_custom, command=change_to_custom, width=65, height=60)
     sidebar_button_custom.pack(pady=10, padx=10)
 
-    # After here
+    sidebar_button_settings = ctk.CTkButton(master=sidebar, text="", image=sidebar_image_settings, command=change_to_settings, width=65, height=60)
+    sidebar_button_settings.pack(pady=10, padx=10)
+
+    # Menu Logos
     main_logo = ctk.CTkImage(Image.open("assets/icons/main_menu_icon.png"), size=[164, 139])
     logo_label_home = ctk.CTkLabel(frame, text="", image=main_logo)
     logo_label_home.pack(pady=12, padx=10)
@@ -1663,23 +1691,35 @@ def main():
     logo_label_custom = ctk.CTkLabel(frame2, text="", image=custom_logo)
     logo_label_custom.pack(pady=12, padx=10)
 
+    settings_logo = ctk.CTkImage(Image.open("assets/icons/settings_menu_icon.png"), size=[164, 139])
+    logo_label_settings = ctk.CTkLabel(frame3, text="", image=settings_logo)
+    logo_label_settings.pack(pady=12, padx=10)
+
+    # Menu Titles
     label_home = ctk.CTkLabel(master=frame, text="Nicks War Thunder Air Bot 1.0\nMain Menu", font=("Roboto", 24))
     label_home.pack(pady=12, padx=10)
 
     label_custom = ctk.CTkLabel(master=frame2, text="Nicks War Thunder Air Bot 1.0\nCustom Menu", font=("Roboto", 24))
     label_custom.pack(pady=12, padx=10)
 
-    # Create the setup instructions label
+    label_settings = ctk.CTkLabel(master=frame3, text="Nicks War Thunder Air Bot 1.0\nSettings Menu", font=("Roboto", 24))
+    label_settings.pack(pady=12, padx=10)
+
+    # Setup and Instructions
     instructions_label_home = ctk.CTkLabel(master=frame,
-                                      text="Preset Setup Instructions:\n1. Check the KeyBinds file and ensure that your keybinds are set up correctly\n2. Go to Hangar and have the appropriate aircraft selected\n3. Select 'Air Realistic Battles'\n4. Ensure you are using Red and Blue default colors\n\nTo end the program, press and hold 'q' at any time",
+                                      text="Preset Setup Instructions:\n1. Go to Hangar and have the appropriate aircraft selected\n2. Select 'Air Realistic Battles'\n3. Ensure you are using Red and Blue default colors\n\nTo end the program, press and hold 'q' at any time",
                                       font=("Roboto", 15))
     instructions_label_home.pack(pady=12, padx=10)
 
-    # Create the setup instructions label
     instructions_label_custom = ctk.CTkLabel(master=frame2,
                                       text="Custom Setup Instructions:\n1. In the Main Menu, input your Activation Key\n2. Select the behavior options relevant to your Aircraft\n3. Go to Hangar and have the appropriate aircraft selected\n4. Select 'Air Realistic Battles'\n5. Ensure you are using Red and Blue default colors\n\nTo end the program, press and hold 'q' at any time",
                                       font=("Roboto", 15))
     instructions_label_custom.pack(pady=12, padx=10)
+
+    instructions_label_settings = ctk.CTkLabel(master=frame3,
+                                      text="Here you can adjust your settings.\nThey are automatically saved.",
+                                      font=("Roboto", 15))
+    instructions_label_settings.pack(pady=12, padx=10)
 
     key_entry_home = ctk.CTkEntry(master=frame, placeholder_text="Activation Key", show="*")
     key_entry_home.pack(pady=12, padx=10)
@@ -1694,21 +1734,27 @@ def main():
     # Bind the function to the text change event of the entry widget
     key_entry_home.bind("<KeyRelease>", update_key_var)
 
-    # Resolution drop down
-    resolution_var = ctk.StringVar(value="Select Resolution")
 
-    #4K = "3840x2160"
-    resolution_box_home = ctk.CTkComboBox(master=frame,
+    # Resolution Setting
+    resolution_var = os.getenv("resolution")
+
+    if not resolution_var:
+        resolution_var = ctk.StringVar(value="Select Resolution")
+
+    # Create a label to display the pitch_num value
+    resolution_label_settings = ctk.CTkLabel(master=frame3, text=f"Select Resolution", font=("Roboto", 12))
+    resolution_label_settings.pack(pady=0, padx=10)
+
+    resolution_box_settings = ctk.CTkComboBox(master=frame3,
                                         values=["1920x1080", "2560x1080", "2560x1440"],
                                         command=choose_resolution,
                                         variable=resolution_var)
-    resolution_box_custom = ctk.CTkComboBox(master=frame2,
-                                        values=["1920x1080", "2560x1080", "2560x1440"],
-                                        command=choose_resolution,
-                                        variable=resolution_var)
-    resolution_box_home.pack(padx=20, pady=10)
-    resolution_box_custom.pack(padx=20, pady=10)
+    resolution_box_settings.pack(padx=10, pady=10)
 
+    if 'resolution' in os.environ:
+        choose_resolution(resolution_var)
+
+    
     # Aircraft drop down
     aircraft_var_home = ctk.StringVar(value="Select Aircraft")  # set initial value
 
@@ -1736,18 +1782,92 @@ def main():
                                         variable=airbrake_var_custom)
     airbrake_box_custom.pack(padx=20, pady=10)
 
-    suicide_checkbox_home = ctk.CTkCheckBox(master=frame, text="Aircraft heads to enemy Airfield?\n              (More detectable)", variable=suicide_checkbox_var)
-    suicide_checkbox_home.pack(pady=12, padx=10)
+    # Flares Checkbox
+    flares_checkbox_custom = ctk.CTkCheckBox(master=frame2, text="Aircraft has Flares", variable=flares_checkbox_var)
+    flares_checkbox_custom.pack(pady=12, padx=10)
 
-    suicide_checkbox_custom = ctk.CTkCheckBox(master=frame2, text="Aircraft heads to enemy Airfield?\n              (More detectable)", variable=suicide_checkbox_var)
-    suicide_checkbox_custom.pack(pady=12, padx=10)
+
+    # Suicide setting
+    suicide_checkbox_settings = ctk.CTkCheckBox(master=frame3, text="Aircraft heads to enemy Airfield?\n              (More detectable)", variable=suicide_checkbox_var)
+    suicide_checkbox_settings.pack(pady=12, padx=10)
+
+    suicide_var = os.getenv("suicide")
+
+    if suicide_var == "1":
+        suicide_checkbox_settings.select()
+    
 
     mode_checkbox_home = ctk.CTkCheckBox(master=frame, text="Use slow method", variable=mode_checkbox_var)
     mode_checkbox_home.pack(pady=12, padx=10)
 
-    flares_checkbox_custom = ctk.CTkCheckBox(master=frame2, text="Aircraft has Flares", variable=flares_checkbox_var)
-    flares_checkbox_custom.pack(pady=12, padx=10)
 
+    # Pitch Adjustment    
+    pitch_multiplier = os.getenv("pitch_multiplier")
+
+    if not pitch_multiplier:
+        pitch_num = 1.0
+    else:
+        pitch_num = float(pitch_multiplier)
+
+    def slider_event(number):
+        global pitch_num
+        global dotenv_path
+        pitch_num = number
+        # Update the label text with the current pitch_num value
+        pitch_multiplier_label_settings.configure(text=f"Pitch Up Multiplier: {pitch_num}")
+        dotenv.set_key(dotenv_path, "pitch_multiplier", str(pitch_num))
+
+    # Create a label to display the pitch_num value
+    pitch_multiplier_label_settings = ctk.CTkLabel(master=frame3, text=f"Pitch Up Multiplier: {pitch_num}", font=("Roboto", 12))
+    pitch_multiplier_label_settings.pack(pady=5, padx=10)
+
+    # Create and pack the pitch slider
+    pitch_slider_settings = ctk.CTkSlider(master=frame3, from_=1, to=6, number_of_steps=20, command=slider_event)
+    pitch_slider_settings.pack(pady=1, padx=10)
+
+    if not pitch_multiplier:
+        pitch_num = 1.0
+    else:
+        pitch_num = float(pitch_multiplier)
+        pitch_multiplier_label_settings.configure(text=f"Pitch Up Multiplier: {pitch_num}")
+
+    pitch_slider_settings.set(pitch_num)
+
+    import subprocess
+    def change_chat_phrases():
+        file_path = "data/chat_phrases.txt"
+        
+        try:
+            subprocess.Popen(["notepad.exe", file_path])
+        except FileNotFoundError:
+            print("Notepad not found. Make sure Notepad is installed on your system.")
+    
+    def change_keybinds():
+        file_path = "data/keybinds.txt"
+        
+        try:
+            subprocess.Popen(["notepad.exe", file_path])
+        except FileNotFoundError:
+            print("Notepad not found. Make sure Notepad is installed on your system.")
+        
+    def change_heights():
+        file_path = "data/heights.txt"
+        
+        try:
+            subprocess.Popen(["notepad.exe", file_path])
+        except FileNotFoundError:
+            print("Notepad not found. Make sure Notepad is installed on your system.")
+
+    chat_phrases_button_settings = ctk.CTkButton(master=frame3, text="Change Chat Phrases", command=change_chat_phrases)
+    chat_phrases_button_settings.pack(pady=12, padx=10)
+
+    chat_keybinds_button_settings = ctk.CTkButton(master=frame3, text="Change Keybinds", command=change_keybinds)
+    chat_keybinds_button_settings.pack(pady=12, padx=10)
+
+    chat_heights_button_settings = ctk.CTkButton(master=frame3, text="Change Minimum Height", command=change_heights)
+    chat_heights_button_settings.pack(pady=12, padx=10)
+
+    
     start_button_home = ctk.CTkButton(master=frame, text="Start Bot", command=start_bot)
     start_button_home.pack(pady=12, padx=10)
 
