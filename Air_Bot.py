@@ -988,6 +988,7 @@ def bot():
             print('CONSOLE: Spawned in\nCONSOLE: Activating CCRP')
             # Throttle up, then pitch up
             holdFor(KEYBINDS['throttleUp'], 2)
+            press(KEYBINDS['secondary'])  
             press(KEYBINDS['ccrp'])            
             move_mouse_by(0, -pitch_value)
             press(KEYBINDS['radar'])
@@ -1069,6 +1070,7 @@ def bot():
                 # Start CCRP and choose base
                 time.sleep(5)
                 print('CONSOLE: Activating CCRP')
+                press(KEYBINDS['secondary'])  
                 press(KEYBINDS['ccrp'])
                 time.sleep(5)
                 print('CONSOLE: Choosing Target Base')
@@ -1650,6 +1652,7 @@ def main():
     frame = ctk.CTkFrame(master=root)
     frame2 = ctk.CTkFrame(master=root)
     frame3 = ctk.CTkFrame(master=root)
+    frame4 = ctk.CTkFrame(master=root)
 
     # Change Screen Functions
     def change_to_home():
@@ -1657,6 +1660,7 @@ def main():
         frame.pack(pady=20, padx=20, fill="both", expand=True)
         frame2.pack_forget()
         frame3.pack_forget()
+        frame4.pack_forget()
         bot_mode = "preset"
 
     def change_to_custom():
@@ -1664,13 +1668,20 @@ def main():
         frame2.pack(pady=20, padx=20, fill="both", expand=True)
         frame.pack_forget()
         frame3.pack_forget()
+        frame4.pack_forget()
         bot_mode = "custom"
 
     def change_to_settings():
         frame3.pack(pady=20, padx=20, fill="both", expand=True)
         frame.pack_forget()
         frame2.pack_forget()
+        frame4.pack_forget()
+
+    def change_to_heights():
+        frame4.pack(pady=20, padx=20, fill="both", expand=True)
         frame.pack_forget()
+        frame2.pack_forget()
+        frame3.pack_forget()
     
     # SideBar Buttons
     sidebar_button_home = ctk.CTkButton(master=sidebar, text="", image=sidebar_image_home, command=change_to_home, width=65, height=60)
@@ -1705,6 +1716,9 @@ def main():
     label_settings = ctk.CTkLabel(master=frame3, text="Nicks War Thunder Air Bot 1.0\nSettings Menu", font=("Roboto", 24))
     label_settings.pack(pady=12, padx=10)
 
+    label_heights = ctk.CTkLabel(master=frame4, text="Nicks War Thunder Air Bot 1.0\nMinimum Height Settings Menu", font=("Roboto", 24))
+    label_heights.pack(pady=12, padx=10)
+
     # Setup and Instructions
     instructions_label_home = ctk.CTkLabel(master=frame,
                                       text="Preset Setup Instructions:\n1. Go to Hangar and have the appropriate aircraft selected\n2. Select 'Air Realistic Battles'\n3. Ensure you are using Red and Blue default colors\n\nTo end the program, press and hold 'q' at any time",
@@ -1720,6 +1734,12 @@ def main():
                                       text="Here you can adjust your settings.\nThey are automatically saved.",
                                       font=("Roboto", 15))
     instructions_label_settings.pack(pady=12, padx=10)
+
+    instructions_label_heights = ctk.CTkLabel(master=frame4,
+                                      text="Here you can adjust the minimum height for a map.\nClick save once you have made your changes.",
+                                      font=("Roboto", 15))
+    instructions_label_heights.pack(pady=12, padx=10)
+
 
     key_entry_home = ctk.CTkEntry(master=frame, placeholder_text="Activation Key", show="*")
     key_entry_home.pack(pady=12, padx=10)
@@ -1800,7 +1820,6 @@ def main():
     mode_checkbox_home = ctk.CTkCheckBox(master=frame, text="Use slow method", variable=mode_checkbox_var)
     mode_checkbox_home.pack(pady=12, padx=10)
 
-
     # Pitch Adjustment    
     pitch_multiplier = os.getenv("pitch_multiplier")
 
@@ -1861,11 +1880,82 @@ def main():
     chat_phrases_button_settings = ctk.CTkButton(master=frame3, text="Change Chat Phrases", command=change_chat_phrases)
     chat_phrases_button_settings.pack(pady=12, padx=10)
 
-    chat_keybinds_button_settings = ctk.CTkButton(master=frame3, text="Change Keybinds", command=change_keybinds)
-    chat_keybinds_button_settings.pack(pady=12, padx=10)
+    keybinds_button_settings = ctk.CTkButton(master=frame3, text="Change Keybinds", command=change_keybinds)
+    keybinds_button_settings.pack(pady=12, padx=10)
 
-    chat_heights_button_settings = ctk.CTkButton(master=frame3, text="Change Minimum Height", command=change_heights)
-    chat_heights_button_settings.pack(pady=12, padx=10)
+    heights_button_settings = ctk.CTkButton(master=frame3, text="Change Minimum Height", command=change_heights)
+    heights_button_settings.pack(pady=12, padx=10)
+
+    #Height Adjustment Menu
+
+    # Aircraft drop down
+    def choose_map():
+        pass
+    map_var_heights = ctk.StringVar(value="Select Map")  # set initial value
+
+    map_var_heights = ctk.CTkComboBox(master=frame4,
+                                        values=[
+    'Afghanistan',
+    'GolanHeights',
+    'GolanHeightsALT',
+    'Sinai',
+    'SinaiALT',
+    'Spain',
+    'SpainALT',
+    'SpainEC',
+    'Vietnam',
+    'VietnamALT',
+    'VietnamEC',
+    'RockyCanyon',
+    'RockyCanyonALT',
+    'City',
+    'CityALT',
+    'Pyrenees',
+    'PyreneesALT',
+    'LadogaLeft',
+    'BerlinRight'
+],
+                                        command=choose_map,
+                                        variable=aircraft_var_home)
+    map_var_heights.pack(padx=20, pady=10)
+
+    height_val = 200
+    def slider_event_2(number):
+        global height_val
+        global dotenv_path
+        height_val = int(number)
+        # Update the label text with the current pitch_num value
+        height_entry_heights.delete(0, "end")
+        height_entry_heights.insert(0, height_val)
+        
+        #dotenv.set_key(dotenv_path, "pitch_multiplier", str(height_val))
+
+    # Create a label to display the pitch_num value
+    label_heights = ctk.CTkLabel(master=frame4, text=f"Map Minimum Height", font=("Roboto", 12))
+    label_heights.pack(pady=5, padx=10)
+
+    height_entry_heights = ctk.CTkEntry(master=frame4, placeholder_text="Minimum Height", width=75, justify="center")
+    height_entry_heights.pack(pady=12, padx=10)
+    height_entry_heights.insert(0, height_val)
+
+    # Get key from .env
+    #activation_key = os.getenv("activation_key")
+
+    #if activation_key:
+        #key_entry_home.insert(0, activation_key)
+        #key_exists(activation_key)
+
+    # Create and pack the pitch slider
+    slider_heights = ctk.CTkSlider(master=frame4, from_=200, to=6000, width=600, number_of_steps=5800, command=slider_event_2)
+    slider_heights.pack(pady=1, padx=10)
+
+    slider_heights.set(height_val)
+    
+    def update_height():
+        pass
+    # Bind the function to the text change event of the entry widget
+    start_button_custom = ctk.CTkButton(master=frame4, text="Save Changes", command=update_height)
+    start_button_custom.pack(pady=12, padx=10)
 
     
     start_button_home = ctk.CTkButton(master=frame, text="Start Bot", command=start_bot)
