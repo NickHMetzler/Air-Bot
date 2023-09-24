@@ -1172,10 +1172,11 @@ def bot():
         
         # Bombing loop
         while not game_over() and spawned_in() and base_info is not False:
-            
+            print("IN BOMBING LOOP")
             # Check for CCRP centreline and aim towards it
             centreline_location = pyautogui.locateOnScreen('assets/temp/centreline.png', grayscale=False, confidence=0.7)
             if centreline_location:
+                print("CCRP Line Found")
                 center_x, center_y = pyautogui.center(centreline_location)
                 
                 screen_width, screen_height = pyautogui.size()
