@@ -32,6 +32,7 @@ import platform
 import cpuinfo
 import multiprocessing
 import pytesseract
+import subprocess
 
 # Global Variables
 resolution = None
@@ -40,7 +41,8 @@ throttle = None
 brake = None
 slope_es = None
 suicide = False
-pitch_num = 1.0
+pitch_multiplier = 1.0
+distance_multiplier = 1.0
 dotenv_path = ".env"
 
 # Allow the use of relative paths
@@ -636,7 +638,7 @@ def pitch_control(target_height, curr_height, attitude, zoom = False, final = Fa
     height_diff = curr_height - target_height
     # Calculate the scaling factor based on the resolution
     global resolution
-    global pitch_num
+    global pitch_multiplier
     scaling_factor = 1.0
     if resolution == "1440":
         scaling_factor = 1.333
@@ -871,7 +873,8 @@ def bot():
     global throttle
     global flare
     global suicide
-    global pitch_num
+    global pitch_multiplier
+    global distance_multiplier
 
     # Set scaling factor for mouse inputs based on resolution
     scaling_factor = 1.0
@@ -881,7 +884,7 @@ def bot():
         scaling_factor = 2.0
     
     # Pitch values
-    pitch_value = int(pitch_num * 200 * scaling_factor)
+    pitch_value = int(pitch_multiplier * 200 * scaling_factor)
     downVal = int(pitch_value/8)
 
     # Preset parameters
@@ -1111,7 +1114,7 @@ def bot():
         base_loc = None
         brake_flag = False
         base_info = None
-        map_distance = DISTANCES[map_name]
+        map_distance = distance_multiplier * DISTANCES[map_name]
         pyrenees_flag = False
 
         # Set heights (Rush Logic)
@@ -1631,7 +1634,7 @@ def main():
     suicide_checkbox_var = tk.BooleanVar()
 
     root.protocol("WM_DELETE_WINDOW", on_window_close)
-    root.geometry("800x700")
+    root.geometry("800x750")
     root.title("War Thunder Air Bot 1.0")
 
     # Create the sidebar
@@ -1762,7 +1765,7 @@ def main():
     if not resolution_var:
         resolution_var = ctk.StringVar(value="Select Resolution")
 
-    # Create a label to display the pitch_num value
+    # Create a label to display the pitch_multiplier value
     resolution_label_settings = ctk.CTkLabel(master=frame3, text=f"Select Resolution", font=("Roboto", 12))
     resolution_label_settings.pack(pady=0, padx=10)
 
@@ -1825,20 +1828,20 @@ def main():
     pitch_multiplier = os.getenv("pitch_multiplier")
 
     if not pitch_multiplier:
-        pitch_num = 1.0
+        pitch_multiplier = 1.0
     else:
-        pitch_num = float(pitch_multiplier)
+        pitch_multiplier = float(pitch_multiplier)
 
     def slider_event(number):
-        global pitch_num
+        global pitch_multiplier
         global dotenv_path
-        pitch_num = number
-        # Update the label text with the current pitch_num value
-        pitch_multiplier_label_settings.configure(text=f"Pitch Up Multiplier: {pitch_num}")
-        dotenv.set_key(dotenv_path, "pitch_multiplier", str(pitch_num))
+        pitch_multiplier = number
+        # Update the label text with the current pitch_multiplier value
+        pitch_multiplier_label_settings.configure(text=f"Pitch Up Multiplier: {pitch_multiplier}")
+        dotenv.set_key(dotenv_path, "pitch_multiplier", str(pitch_multiplier))
 
-    # Create a label to display the pitch_num value
-    pitch_multiplier_label_settings = ctk.CTkLabel(master=frame3, text=f"Pitch Up Multiplier: {pitch_num}", font=("Roboto", 12))
+    # Create a label to display the pitch_multiplier value
+    pitch_multiplier_label_settings = ctk.CTkLabel(master=frame3, text=f"Pitch Up Multiplier: {pitch_multiplier}", font=("Roboto", 12))
     pitch_multiplier_label_settings.pack(pady=5, padx=10)
 
     # Create and pack the pitch slider
@@ -1846,14 +1849,46 @@ def main():
     pitch_slider_settings.pack(pady=1, padx=10)
 
     if not pitch_multiplier:
-        pitch_num = 1.0
+        pitch_multiplier = 1.0
     else:
-        pitch_num = float(pitch_multiplier)
-        pitch_multiplier_label_settings.configure(text=f"Pitch Up Multiplier: {pitch_num}")
+        pitch_multiplier = float(pitch_multiplier)
+        pitch_multiplier_label_settings.configure(text=f"Pitch Up Multiplier: {pitch_multiplier}")
 
-    pitch_slider_settings.set(pitch_num)
+    pitch_slider_settings.set(pitch_multiplier)
 
-    import subprocess
+    # Distance Adjustment    
+    distance_multiplier = os.getenv("distance_multiplier")
+
+    if not distance_multiplier:
+        distance_multiplier = 1.0
+    else:
+        distance_multiplier = float(distance_multiplier)
+
+    def distance_slider_event(number):
+        global distance_multiplier
+        global dotenv_path
+        distance_multiplier = math.trunc(number * 10) / 10
+        # Update the label text with the current distance_multiplier value
+        distance_multiplier_label_settings.configure(text=f"Distance Multiplier: {distance_multiplier}")
+        dotenv.set_key(dotenv_path, "distance_multiplier", str(distance_multiplier))
+
+    # Create a label to display the distance_multiplier value
+    distance_multiplier_label_settings = ctk.CTkLabel(master=frame3, text=f"Distance Multiplier: {distance_multiplier}", font=("Roboto", 12))
+    distance_multiplier_label_settings.pack(pady=5, padx=10)
+
+    # Create and pack the distance slider
+    distance_slider_settings = ctk.CTkSlider(master=frame3, from_=0.1, to=3, number_of_steps=29, command=distance_slider_event)
+    distance_slider_settings.pack(pady=1, padx=10)
+
+    if not distance_multiplier:
+        distance_multiplier = 1.0
+    else:
+        distance_multiplier = float(pitch_multiplier)
+        distance_multiplier_label_settings.configure(text=f"Distance Multiplier: {distance_multiplier}")
+
+    distance_slider_settings.set(distance_multiplier)
+
+    
     def change_chat_phrases():
         file_path = "data/chat_phrases.txt"
         
@@ -1925,26 +1960,17 @@ def main():
         global height_val
         global dotenv_path
         height_val = int(number)
-        # Update the label text with the current pitch_num value
+        # Update the label text with the current pitch_multiplier value
         height_entry_heights.delete(0, "end")
         height_entry_heights.insert(0, height_val)
-        
-        #dotenv.set_key(dotenv_path, "pitch_multiplier", str(height_val))
 
-    # Create a label to display the pitch_num value
+    # Create a label to display the pitch_multiplier value
     label_heights = ctk.CTkLabel(master=frame4, text=f"Map Minimum Height", font=("Roboto", 12))
     label_heights.pack(pady=5, padx=10)
 
     height_entry_heights = ctk.CTkEntry(master=frame4, placeholder_text="Minimum Height", width=75, justify="center")
     height_entry_heights.pack(pady=12, padx=10)
     height_entry_heights.insert(0, height_val)
-
-    # Get key from .env
-    #activation_key = os.getenv("activation_key")
-
-    #if activation_key:
-        #key_entry_home.insert(0, activation_key)
-        #key_exists(activation_key)
 
     # Create and pack the pitch slider
     slider_heights = ctk.CTkSlider(master=frame4, from_=200, to=6000, width=600, number_of_steps=5800, command=slider_event_2)
