@@ -33,6 +33,7 @@ import cpuinfo
 import multiprocessing
 import pytesseract
 import subprocess
+import warnings
 
 # Global Variables
 resolution = None
@@ -53,8 +54,14 @@ for file in os.listdir(script_folder):
     file_path = os.path.join(script_folder, file)
     os.chmod(file_path, 0o666)
 
+# Set the path to Tesseract OCR executable
+pytesseract.pytesseract.tesseract_cmd = r'Tesseract-OCR/tesseract.exe'
+
 # PyAutoGui Failsafe off
 pyautogui.FAILSAFE = False
+
+# Disable "libpng warning: iCCP: known incorrect sRGB profile" warning
+warnings.filterwarnings("ignore", category=UserWarning, module="PIL.PngImagePlugin")
 
 ###############################
 #          Constants          #
@@ -132,9 +139,6 @@ if not CHAT_PHRASES:
 
 if not PYRENEES_PHRASES:
     PYRENEES_PHRASES = ["", ""]
-
-# Set the path to Tesseract OCR executable (change this if necessary)
-pytesseract.pytesseract.tesseract_cmd = r'Tesseract-OCR/tesseract.exe'
 
 ###############################
 #      Asset Decryption       #
