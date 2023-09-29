@@ -792,14 +792,13 @@ def delete_temp_files():
 
 # Define a dictionary to map conditions to heights
 heights_map = {
-    ('rush', 'GolanHeightsALT', 650): (lambda base_info: base_info[1] <= 0.26),
-    ('rush', 'GolanHeights', 550): (lambda base_info: base_info[1] <= 0.26),
-    ('rush', 'Sinai', 500): (lambda base_info: base_info[2][0] >= 0.35),
-    ('rush', 'Vietnam', 1200): (lambda base_info: base_info[2][0] >= 0.513),
-    ('rush', 'Spain', 550): (lambda base_info: base_info[1] <= 0.16),
-    ('rush', 'City', 850): (lambda base_info: base_info[2][0] <= 0.32),
-    ('rush', 'City', 1000): (lambda base_info: base_info[2][0] >= 0.32),
-    ('rush', 'VietnamALT', 1200): (lambda base_info: base_info[2][0] <= 0.390249) 
+    ('rush', 'GolanHeightsALT', HEIGHTS['GolanHeightsALT'] - 850): (lambda base_info: base_info[1] <= 0.26),
+    ('rush', 'Sinai', HEIGHTS['Sinai'] + 250): (lambda base_info: base_info[2][0] >= 0.35),
+    ('rush', 'Vietnam', HEIGHTS['Vietnam'] + 350): (lambda base_info: base_info[2][0] >= 0.513),
+    ('rush', 'Spain', HEIGHTS['Spain'] - 550): (lambda base_info: base_info[1] <= 0.16),
+    ('rush', 'City', HEIGHTS['City'] + 150): (lambda base_info: base_info[2][0] <= 0.32),
+    ('rush', 'City', HEIGHTS['City'] + 300): (lambda base_info: base_info[2][0] >= 0.32),
+    ('rush', 'VietnamALT', HEIGHTS['VietnameAlt'] + 350): (lambda base_info: base_info[2][0] <= 0.390249) 
 }
 
 # Function to check and set the height value
