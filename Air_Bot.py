@@ -1169,7 +1169,7 @@ def bot():
                 pass
                 
         bomb_flag = False
-        
+        print("Before Bombing loop")
         # Bombing loop
         while not game_over() and spawned_in() and base_info is not False:
             print("IN BOMBING LOOP")
