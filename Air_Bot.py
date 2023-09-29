@@ -1,6 +1,6 @@
 # Naval_Bot.py
-# Plays War Thunder Naval to automatically generate Silver Lions (In Game Currency)
-# 2023-06-18
+# Plays War Thunder Air RB to automatically generate Silver Lions (In Game Currency) and Research Points
+# 2023-09-29
 # Nicolas Metzler
 
 # Import Statements
@@ -82,6 +82,17 @@ with open('data/heights.txt', 'rb') as file:
     
 # Evaluate the contents as Python code
 HEIGHTS = eval(contents)
+
+# Dictionary of Height Changes based on which base is chosen and the map
+heights_map = {
+    ('rush', 'GolanHeightsALT', HEIGHTS['GolanHeightsALT'] - 850): (lambda base_info: base_info[1] <= 0.26),
+    ('rush', 'Sinai', HEIGHTS['Sinai'] + 250): (lambda base_info: base_info[2][0] >= 0.35),
+    ('rush', 'Vietnam', HEIGHTS['Vietnam'] + 350): (lambda base_info: base_info[2][0] >= 0.513),
+    ('rush', 'Spain', HEIGHTS['Spain'] - 550): (lambda base_info: base_info[1] <= 0.16),
+    ('rush', 'City', HEIGHTS['City'] + 150): (lambda base_info: base_info[2][0] <= 0.32),
+    ('rush', 'City', HEIGHTS['City'] + 300): (lambda base_info: base_info[2][0] >= 0.32),
+    ('rush', 'VietnamALT', HEIGHTS['VietnameAlt'] + 350): (lambda base_info: base_info[2][0] <= 0.390249) 
+}
 
 # Bombing Distances for each Map
 with open('data/distances_encrypted.txt', 'rb') as file:
@@ -184,7 +195,6 @@ def process_bin_folder(bin_folder):
         return
 
 
-
 ###############################
 #   C Struct Redefinitions    #
 ###############################
@@ -281,22 +291,6 @@ def is_image_on_screen(image_path, grayscale=True, confidence=0.7):
         print(f"CONSOLE: Error in is_image_on_screen(): {e}")
         return False
 
-# Wait on - Waiting on the image to leave
-def wait_on(image_path, grayscale=True, confidence=0.7):
-    while is_image_on_screen(image_path, grayscale, confidence):
-        time.sleep(0.2)
-
-# Wait for - Waiting for the image to appear
-def wait_for(image_path, grayscale=True, confidence=0.7):
-    while is_image_on_screen(image_path, grayscale, confidence) == False:
-        time.sleep(0.2)
-
-# Function to calculate the elapsed time
-def get_elapsed_time(startTime):
-    current_time = time.time()
-    elapsed_time = current_time - startTime
-    return elapsed_time
-
 def find_text_on_screen(target_text):
     # Perform OCR on the screenshot to recognize text
     screenshot = pyautogui.screenshot()
@@ -371,7 +365,7 @@ def get_target_info(target):
             return angle_degrees, distance
     return None
 
-# Find the enemy base location
+# Find the enemy base location and use that to determine the map
 def get_map_info():
     json_data = get_location_data()
     if json_data:
@@ -380,10 +374,8 @@ def get_map_info():
             field_x = round((field["sx"] + field["ex"]) / 2, 2)
             field_y = round((field["sy"] + field["ey"]) / 2, 2)
             return field_x, field_y
-        
-# Add bases if they are not in bases_arr
-# If the base is in bases_arr but not in the new bases, set to False
 
+# Check if the plane is spawned in
 def spawned_in():
     json_data = get_location_data()
     if json_data:
@@ -391,7 +383,8 @@ def spawned_in():
         if player:
             return True
         return False
-    
+
+# Check if on the spawn screen
 def spawn_screen():
     json_data = get_location_data()
     if json_data:
@@ -401,6 +394,7 @@ def spawn_screen():
                 return True
         return False
 
+# Check that the bot is in a game
 def in_game():
     json_data = get_location_data()
     if json_data:
@@ -413,6 +407,7 @@ def in_game():
         return False
     return False
 
+# Initialize the list of Bases
 def initialize_bases():
     global bases_arr
     json_data = get_location_data()
@@ -422,7 +417,7 @@ def initialize_bases():
                 bases_arr.append([(obj["x"], obj["y"]), True])
         print(f"Bases Array is: {bases_arr}")
         
-
+# Count the number of respawned bases
 def count_bases():
     global bases_arr
     new_bases = []
@@ -499,7 +494,7 @@ def find_target_base():
         except:
             return None
 
-
+# Calculate a location for holding pattern (slow mode)
 def get_holding_location(location, city=False):
     json_data = get_location_data()
     points = []
@@ -550,7 +545,7 @@ def get_base_info(base):
             distance = math.sqrt((x - base_loc[0])**2 + (y - base_loc[1])**2)
             return angle_degrees, distance, new_base
          
-
+# Calculates the slope of two given coordinates
 def calculate_slope(x1, y1, x2, y2):
     return (y2 - y1) / (x2 - x1)
 
@@ -604,7 +599,8 @@ def get_friendly_field_info(map_name):
                 field_x, field_y = field["sx"], field["sy"]
             distance = math.sqrt((x - field_x)**2 + (y - field_y)**2)
             return angle_degrees, distance
-        
+
+# Get enemy airfield location
 def get_enemy_field_info():
     json_data = get_location_data()
     if json_data:
@@ -615,10 +611,79 @@ def get_enemy_field_info():
             return get_target_info((field_x, field_y))
             
 
+
+#########################
+#      IO Functions     #
+#########################
+
+# Click mouse
+def click_mouse():
+    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0) 
+    time.sleep(np.random.uniform(0.7,1.2)) 
+    win32api.mouse_event(win32con. MOUSEEVENTF_LEFTUP, 0, 0)
+
+# Move mouse to given X, Y Coordinates
+def move_mouse_to(x, y):
+    pyautogui.moveTo(x, y)
+
+# Move mouse by a given X, Y Value
+def move_mouse_by(x, y):
+    win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, x, y, 0, 0)
+
+# Move the Mouse to a given image
+def move_mouse_to_image(image_path):
+    image = pyautogui.locateCenterOnScreen(image_path, grayscale=False, confidence=0.75)
+    if image != None:
+        move_mouse_to(image[0], image[1])
+        time.sleep(np.random.uniform(0.9,1.2))
+        return True
+    else:
+        return False
+
+# Hold a given key
+def hold(key):
+    pressKey(KEYS[key])
+
+# Release a given key
+def release(key):
+    releaseKey(KEYS[key])
+
+# Press a given Key
+def press(key):
+    hold(key)
+    time.sleep(np.random.uniform(0.3,0.7)) 
+    release(key)
+
+def type_key(key):
+    hold(key)
+    time.sleep(np.random.uniform(0.02,0.07)) 
+    release(key)
+
+# Hold a given key for a specified amount of time
+def holdFor(key, seconds):
+    hold(key)
+    time.sleep(seconds) 
+    release(key)
+
+# Made for typing messages
+def typer(map_name=""):
+    if map_name == "Pyrenees":
+        phrase = random.choice(PYRENEES_PHRASES)
+    else:
+        phrase = random.choice(CHAT_PHRASES)
+    for key in phrase:
+        if key.isupper():
+            type_key('caps')
+            type_key(key.lower())
+            type_key('caps')
+        else:
+            type_key(key.lower())
+
 #########################
 #   Control Functions   #
 #########################
 
+# Holding pattern (slow mode)
 def holding_pattern(height):
     move_mouse_by(-700, 0)
     time.sleep(2)
@@ -702,73 +767,7 @@ def pitch_control(target_height, curr_height, attitude, zoom = False, final = Fa
         elif attitude < 5.0:
             move_mouse_by(0, int(-15 * scaling_factor))
 
-
-
-# Click mouse
-def click_mouse():
-    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0) 
-    time.sleep(np.random.uniform(0.7,1.2)) 
-    win32api.mouse_event(win32con. MOUSEEVENTF_LEFTUP, 0, 0)
-
-# Move mouse to given X, Y Coordinates
-def move_mouse_to(x, y):
-    pyautogui.moveTo(x, y)
-
-# Move mouse by a given X, Y Value
-def move_mouse_by(x, y):
-    win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, x, y, 0, 0)
-
-# Move the Mouse to a given image
-def move_mouse_to_image(image_path):
-    image = pyautogui.locateCenterOnScreen(image_path, grayscale=False, confidence=0.75)
-    if image != None:
-        move_mouse_to(image[0], image[1])
-        time.sleep(np.random.uniform(0.9,1.2))
-        return True
-    else:
-        return False
-
-# Hold a given key
-def hold(key):
-    pressKey(KEYS[key])
-
-# Release a given key
-def release(key):
-    releaseKey(KEYS[key])
-
-# Press a given Key
-def press(key):
-    hold(key)
-    time.sleep(np.random.uniform(0.3,0.7)) 
-    release(key)
-
-def type_key(key):
-    hold(key)
-    time.sleep(np.random.uniform(0.02,0.07)) 
-    release(key)
-
-# Hold a given key for a specified amount of time
-def holdFor(key, seconds):
-    hold(key)
-    time.sleep(seconds) 
-    release(key)
-
-# Made for typing messages
-def typer(map_name=""):
-    if map_name == "Pyrenees":
-        phrase = random.choice(PYRENEES_PHRASES)
-    else:
-        phrase = random.choice(CHAT_PHRASES)
-    for key in phrase:
-        if key.isupper():
-            type_key('caps')
-            type_key(key.lower())
-            type_key('caps')
-        else:
-            type_key(key.lower())
-
             
-        
 #########################
 #   General Functions   #
 #########################
@@ -790,16 +789,11 @@ def delete_temp_files():
             # Delete the file
             os.remove(file_path)
 
-# Define a dictionary to map conditions to heights
-heights_map = {
-    ('rush', 'GolanHeightsALT', HEIGHTS['GolanHeightsALT'] - 850): (lambda base_info: base_info[1] <= 0.26),
-    ('rush', 'Sinai', HEIGHTS['Sinai'] + 250): (lambda base_info: base_info[2][0] >= 0.35),
-    ('rush', 'Vietnam', HEIGHTS['Vietnam'] + 350): (lambda base_info: base_info[2][0] >= 0.513),
-    ('rush', 'Spain', HEIGHTS['Spain'] - 550): (lambda base_info: base_info[1] <= 0.16),
-    ('rush', 'City', HEIGHTS['City'] + 150): (lambda base_info: base_info[2][0] <= 0.32),
-    ('rush', 'City', HEIGHTS['City'] + 300): (lambda base_info: base_info[2][0] >= 0.32),
-    ('rush', 'VietnamALT', HEIGHTS['VietnameAlt'] + 350): (lambda base_info: base_info[2][0] <= 0.390249) 
-}
+# Function to calculate the elapsed time
+def get_elapsed_time(startTime):
+    current_time = time.time()
+    elapsed_time = current_time - startTime
+    return elapsed_time
 
 # Function to check and set the height value
 def set_height(mode, map_name, base_info, height):
@@ -860,8 +854,12 @@ def research_protocol():
     return researched
 
 
-# Bot Loop
+#########################
+#       Bot Loop        #
+#########################
+
 def bot():
+    # Initialization
     # Import Globals
     global aircraft
     global resolution
@@ -909,7 +907,6 @@ def bot():
         airspawn = False
         aircraft = None
         mode = "rush"
-
 
     # Process the bin folder
     process_bin_folder(f"assets/bin/{resolution}")
@@ -1270,7 +1267,6 @@ def bot():
             brake_flag = False
             zoom = False
 
-            
             if suicide:
                 print("CONSOLE: Heading towards Enemy Airfield")
             else:
@@ -1299,7 +1295,6 @@ def bot():
             if throttle == "Slow":
                 holdFor(KEYBINDS["throttleDown"], 0.1)
                 
-            
             final = False
 
         # Fly towards enemy Airfield
