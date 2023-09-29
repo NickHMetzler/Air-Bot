@@ -91,7 +91,7 @@ heights_map = {
     ('rush', 'Spain', HEIGHTS['Spain'] - 550): (lambda base_info: base_info[1] <= 0.16),
     ('rush', 'City', HEIGHTS['City'] + 150): (lambda base_info: base_info[2][0] <= 0.32),
     ('rush', 'City', HEIGHTS['City'] + 300): (lambda base_info: base_info[2][0] >= 0.32),
-    ('rush', 'VietnamALT', HEIGHTS['VietnameAlt'] + 350): (lambda base_info: base_info[2][0] <= 0.390249) 
+    ('rush', 'VietnamALT', HEIGHTS['VietnamALT'] + 350): (lambda base_info: base_info[2][0] <= 0.390249) 
 }
 
 # Bombing Distances for each Map
