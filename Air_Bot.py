@@ -34,7 +34,6 @@ import multiprocessing
 import pytesseract
 import subprocess
 import warnings
-import sys
 import webbrowser
 
 # Decryption Key
