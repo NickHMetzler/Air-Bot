@@ -34,6 +34,11 @@ import multiprocessing
 import pytesseract
 import subprocess
 import warnings
+import sys
+
+# Decryption Key
+SECRET_KEY = b'EDES-yzmYgDT1TYC10ttk-bVNSpHYvGuyl1F3oVcCbY='
+cipher_suite = Fernet(SECRET_KEY)
 
 # Global Variables
 resolution = None
@@ -90,6 +95,10 @@ with open('data/heights.txt', 'rb') as file:
 # Evaluate the contents as Python code
 HEIGHTS = eval(contents)
 
+# Clear the log file by opening it in write mode (w) instead of append mode (a)
+with open('data/console_log.txt', 'w') as f:
+    pass  # This will clear the existing contents of the log file
+
 # Dictionary of Height Changes based on which base is chosen and the map
 heights_map = {
     ('rush', 'GolanHeightsALT', HEIGHTS['GolanHeightsALT'] - 850): (lambda base_info: base_info[1] <= 0.26),
@@ -144,6 +153,7 @@ if not PYRENEES_PHRASES:
 #      Asset Decryption       #
 ###############################
 
+# Depricated
 # Decrypt the bin files
 def decrypt_bin_file(bin_file):
     # Read the binary file
@@ -156,7 +166,7 @@ def decrypt_bin_file(bin_file):
     decrypted_data = cipher.decrypt(encrypted_data)
 
     return decrypted_data
-
+# Depricated
 # Convert bin data to png
 def convert_to_png(data):
     # Create a PIL Image object from the decrypted data
@@ -169,32 +179,32 @@ def convert_to_png(data):
 
     return png_data.read()
 
-# Convert all bin files to png
+# Copy all files from assets/images/{resolution} to temp directory
 def process_bin_folder(bin_folder):
     temp_dir = r"assets\temp"
+    
     # Check if the directory exists
     if not os.path.exists(temp_dir):
         # Create the directory
         os.makedirs(temp_dir)
-        print("CONSOLE: Creating Temp Folder...")
+        log("CONSOLE: Creating Temp Folder...")
     else:
-        print("CONSOLE: Temp Folder Found")
+        log("CONSOLE: Temp Folder Found")
+    
     try:
-        # Iterate over the binary files in the folder
-        for filename in os.listdir(bin_folder):
-            if filename.endswith('.bin'):
-                bin_file = os.path.join(bin_folder, filename)
-
-                # Decrypt the binary file and convert it to PNG
-                decrypted_data = decrypt_bin_file(bin_file)
-                png_data = convert_to_png(decrypted_data)
-
-                # Create a temporary PNG file with the same name as the bin file
-                temp_filename = os.path.join(temp_dir, os.path.splitext(filename)[0] + '.png')
-
-                # Write the PNG data to the temporary file
-                with open(temp_filename, 'wb') as f:
-                    f.write(png_data)
+        # Get the directory path for the resolution folder in assets/images
+        resolution_dir = os.path.join("assets", "images", resolution)
+        
+        # Iterate over the files in the resolution directory
+        for filename in os.listdir(resolution_dir):
+            # Construct the source and destination paths
+            src_path = os.path.join(resolution_dir, filename)
+            dest_path = os.path.join(temp_dir, filename)
+            
+            # Copy the file from the resolution directory to the temp directory
+            shutil.copy(src_path, dest_path)
+    except Exception as e:
+        log(f"Error: {e}")
     finally:
         return
 
@@ -292,7 +302,7 @@ def is_image_on_screen(image_path, grayscale=True, confidence=0.7):
         else:
             return False
     except Exception as e:
-        print(f"CONSOLE: Error in is_image_on_screen(): {e}")
+        log(f"CONSOLE: Error in is_image_on_screen(): {e}")
         return False
 
 def find_text_on_screen(target_text):
@@ -329,7 +339,7 @@ def get_map_data():
         try:
             return response.json()
         except json.decoder.JSONDecodeError as e:
-            print(f"CONSOLE: get_location_data() Error decoding JSON: {e}")
+            log(f"CONSOLE: get_location_data() Error decoding JSON: {e}")
     return None
 
 # Returns the current Height and Rate of Climb
@@ -419,7 +429,7 @@ def initialize_bases():
         for obj in json_data:
             if obj["type"] == "bombing_point":
                 bases_arr.append([(obj["x"], obj["y"]), True])
-        print(f"Bases Array is: {bases_arr}")
+        log(f"Bases Array is: {bases_arr}")
         
 # Count the number of respawned bases
 def count_bases():
@@ -432,7 +442,7 @@ def count_bases():
                 new_bases.append((obj["x"], obj["y"]))
         for base in bases_arr:
             if base[0] not in new_bases and base[1] == True:
-                print(f"Base at {base[0]} has been bombed")
+                log(f"Base at {base[0]} has been bombed")
                 # Base has been bombed
                 base[1] = False
         append_list = []
@@ -459,9 +469,9 @@ def count_bases():
                 bases += 1
             i += 1
         if bases >= 2 or bases <= 0:
-            print(f"CONSOLE: There are {bases} new bases present")
+            log(f"CONSOLE: There are {bases} new bases present")
         else:
-            print(f"CONSOLE: There is {bases} new base present")
+            log(f"CONSOLE: There is {bases} new base present")
         return bases
     return 0
         
@@ -572,8 +582,8 @@ def get_friendly_field_info(map_name):
                 slope_xy = calculate_slope(x, y, field["ex"], field["ey"])
                 if slope_es is None:
                     slope_es = calculate_slope(field["ex"], field["ey"], field["sx"], field["sy"])
-            print(slope_xy)
-            print(slope_es)
+            log(slope_xy)
+            log(slope_es)
             if slope_xy > slope_es + 0.5 or slope_xy < slope_es - 0.5:
                 if "ALT" in map_name:
                     if slope_xy < slope_es:
@@ -585,7 +595,7 @@ def get_friendly_field_info(map_name):
                         glide_x, glide_y = field["sx"] + 0.2, field["sy"] + 0.2
                     elif slope_xy > slope_es:
                         glide_x, glide_y = field["sx"] - 0.2, field["sy"] + 0.2
-                print(f"{glide_x}, {glide_y}")
+                log(f"{glide_x}, {glide_y}")
                 angle = math.atan2(glide_y - y, glide_x - x)
                 facing_angle = math.atan2(dy, dx)
                 turn_angle = angle - facing_angle
@@ -717,13 +727,13 @@ def pitch_control(target_height, curr_height, attitude, zoom = False, final = Fa
         scaling_factor = scaling_factor/1.3
     
     if height_diff > 0:
-        print(f"CONSOLE: pitch_control(): Aircraft is above target height by {height_diff}m")
+        log(f"CONSOLE: pitch_control(): Aircraft is above target height by {height_diff}m")
     else:
-        print(f"CONSOLE: pitch_control(): Aircraft is below target height by {-height_diff}m")
+        log(f"CONSOLE: pitch_control(): Aircraft is below target height by {-height_diff}m")
     if attitude > 0:
-        print(f"CONSOLE: pitch_control(): Aircraft is ascending by {attitude}m/s")
+        log(f"CONSOLE: pitch_control(): Aircraft is ascending by {attitude}m/s")
     else:
-        print(f"CONSOLE: pitch_control(): Aircraft is descending by {-attitude}m/s")
+        log(f"CONSOLE: pitch_control(): Aircraft is descending by {-attitude}m/s")
 
     
     if height_diff > 450:
@@ -793,6 +803,12 @@ def delete_temp_files():
             # Delete the file
             os.remove(file_path)
 
+# Function to log to console and file
+def log(message):
+    print(message)  # Print to the console
+    with open('data/console_log.txt', 'a') as f:
+        f.write(message + '\n')  # Append to the log file
+
 # Function to calculate the elapsed time
 def get_elapsed_time(startTime):
     current_time = time.time()
@@ -805,10 +821,10 @@ def set_height(mode, map_name, base_info, height):
         if key[0] == mode and key[1] == map_name:
             if condition(base_info):
                 if height != key[2]:
-                    print(f"CONSOLE: Changing {map_name} Height from {height} to {key[2]}")
+                    log(f"CONSOLE: Changing {map_name} Height from {height} to {key[2]}")
                     height = key[2]
             elif height != HEIGHTS[map_name]:
-                print(f"CONSOLE: Changing back {map_name} Height to from {height} to {HEIGHTS[map_name]}")
+                log(f"CONSOLE: Changing back {map_name} Height to from {height} to {HEIGHTS[map_name]}")
                 height = HEIGHTS[map_name]
             break
     return height
@@ -818,38 +834,38 @@ def research_protocol():
     researched = False
     # If these are false, it is a new Aircraft
     if pyautogui.locateOnScreen('assets/temp/finish.png', grayscale=False, confidence=0.85) != None:
-        print('CONSOLE: Found Finish for Aircraft Modification')
+        log('CONSOLE: Found Finish for Aircraft Modification')
         while pyautogui.locateOnScreen('assets/temp/finish.png', grayscale=False, confidence=0.7) != None:
             move_mouse_to_image('assets/temp/finish.png')
             click_mouse()
-            print("CONSOLE: Trying to click Finish")
+            log("CONSOLE: Trying to click Finish")
             time.sleep(0.5)
-        print("CONSOLE: Modification has been Researched")
+        log("CONSOLE: Modification has been Researched")
         researched = True
     elif pyautogui.locateOnScreen('assets/temp/spend.png', grayscale=False, confidence=0.85) != None:
-        print('CONSOLE: Found Spend for Aircraft Modification')
+        log('CONSOLE: Found Spend for Aircraft Modification')
         while pyautogui.locateOnScreen('assets/temp/spend.png', grayscale=False, confidence=0.7) != None:
             move_mouse_to_image('assets/temp/spend.png')
             click_mouse()
-            print("CONSOLE: Trying to click Spend")
+            log("CONSOLE: Trying to click Spend")
             time.sleep(0.5)
-        print("CONSOLE: Modification has been Researched")
+        log("CONSOLE: Modification has been Researched")
         researched = True
 
     time.sleep(4)
 
     # All modifications in a row are researched
     if pyautogui.locateOnScreen('assets/temp/all_mods.png', grayscale=False, confidence=0.7) != None:
-        print('CONSOLE: Found all_mods for Aircraft Modification')
+        log('CONSOLE: Found all_mods for Aircraft Modification')
         while pyautogui.locateOnScreen('assets/temp/all_mods.png', grayscale=False, confidence=0.7) != None:
             move_mouse_to_image('assets/temp/all_mods.png')
             click_mouse()
-            print("CONSOLE: Trying to click all_mods")
+            log("CONSOLE: Trying to click all_mods")
             time.sleep(0.5)
 
     # A plane has been reserached
     if pyautogui.locateCenterOnScreen('assets/temp/order.png', grayscale=False, confidence=0.85) != None:
-        print("CONSOLE: Plane has been Researched")
+        log("CONSOLE: Plane has been Researched")
         press('esc')
         time.sleep(4)
         press('esc')
@@ -899,6 +915,8 @@ def bot():
             "F-4E": {"brake": "Tap", "throttle": "Slow", "airspawn": False},
             "F-4F": {"brake": "Tap", "throttle": "Slow", "airspawn": False},
             "MiG-23BN": {"brake": "Tap", "throttle": "Slow", "airspawn": False},
+            "Harrier": {"brake": "No", "throttle": "Full", "airspawn": False},
+            "Tornado-IDS": {"brake": "Hold", "throttle": "Slow", "airspawn": False},
         }
 
         default_settings = {"brake": "Full", "throttle": "Slow", "airspawn": False}
@@ -932,7 +950,7 @@ def bot():
                 time.sleep(2)
 
             if pyautogui.locateOnScreen('assets/temp/decal.png', grayscale=False, confidence=0.85) != None:
-                print('CONSOLE: Decal')
+                log('CONSOLE: Decal')
                 move_mouse_to_image('assets/temp/decal.png')
                 click_mouse()
                 move_mouse_to(100, 100)
@@ -947,11 +965,11 @@ def bot():
                 break
 
         # Waiting to join a battle
-        print("\n\nCONSOLE: To Battle!")
-        print('CONSOLE: Waiting in Qeue...')
+        log("\n\nCONSOLE: To Battle!")
+        log('CONSOLE: Waiting in Qeue...')
         while in_game() == False:
             pass
-        print('CONSOLE: In Spawn Screen')
+        log('CONSOLE: In Spawn Screen')
         
         # Initialize variables
         move_mouse_to(100, 100)
@@ -968,12 +986,12 @@ def bot():
                     city = True
                 break
             except:
-                print(f"CONSOLE: Map not found; map_coords are {map_coords}")
+                log(f"CONSOLE: Map not found; map_coords are {map_coords}\nCONSOLE: Please make a ticket with these coordinates and the map on the Discord")
                 # Temp variable
                 map_name = 'RockyCanyonALT'
             inc += 1
             time.sleep(0.5)
-        print(f'CONSOLE: Map is {map_name}') 
+        log(f'CONSOLE: Map is {map_name}') 
 
         # Take off/spawn procedure
         battle_time = time.time()
@@ -983,12 +1001,12 @@ def bot():
                 pass
             if not spawned_in():
                 press(KEYBINDS['enter'])
-                print("CONSOLE: Spawn Button Clicked")
+                log("CONSOLE: Spawn Button Clicked")
 
-            print('CONSOLE: Waiting to Spawn on Airfield')
+            log('CONSOLE: Waiting to Spawn on Airfield')
             while not spawned_in():
                 pass
-            print('CONSOLE: Spawned in\nCONSOLE: Activating CCRP')
+            log('CONSOLE: Spawned in\nCONSOLE: Activating CCRP')
             # Throttle up, then pitch up
             holdFor(KEYBINDS['throttleUp'], 2)
             press(KEYBINDS['secondary'])  
@@ -1004,16 +1022,13 @@ def bot():
                 press('tab')
                 typer(map_name)
                 press('enter')
-            else:
-                press('t')
-                press('1')
-                press('4')
+            
 
             # Retract gear when taken off
             height = ground
             while height <= ground + 5 and not game_over():
                 height = get_attitude()[0]
-            print('CONSOLE: Retracting Landing Gear')
+            log('CONSOLE: Retracting Landing Gear')
             press(KEYBINDS['gear'])
             
             if mode == 'rush':
@@ -1037,7 +1052,7 @@ def bot():
                 height = ground + 5000
 
                 # Climb to 5000m above ground and aim left
-                print("CONSOLE: Climbing...")
+                log("CONSOLE: Climbing...")
                 initialize_bases()
                 while not game_over() and spawned_in() and curr_height < height/2:
                     curr_height = get_attitude()[0]
@@ -1058,8 +1073,8 @@ def bot():
                 pass
             if not spawned_in():
                 press(KEYBINDS['enter'])
-                print("CONSOLE: Spawn Button Clicked")
-            print('CONSOLE: Waiting to Spawn in Airspawn')
+                log("CONSOLE: Spawn Button Clicked")
+            log('CONSOLE: Waiting to Spawn in Airspawn')
             while not spawned_in():
                 pass
         
@@ -1072,11 +1087,11 @@ def bot():
                 press(KEYBINDS['radar'])
                 # Start CCRP and choose base
                 time.sleep(5)
-                print('CONSOLE: Activating CCRP')
+                log('CONSOLE: Activating CCRP')
                 press(KEYBINDS['secondary'])  
                 press(KEYBINDS['ccrp'])
                 time.sleep(5)
-                print('CONSOLE: Choosing Target Base')
+                log('CONSOLE: Choosing Target Base')
                 press(KEYBINDS['ccrp'])
             elif mode == "slow":
                 move_mouse_by(0, -pitch_value)
@@ -1090,7 +1105,7 @@ def bot():
                 curr_height = att[0]
                 height = 7000
                 # Climb to 5000m above ground
-                print("CONSOLE: Climbing...")
+                log("CONSOLE: Climbing...")
                 initialize_bases()
                 i = 0
                 while not game_over() and spawned_in() and curr_height < height/2:
@@ -1129,7 +1144,7 @@ def bot():
                     height += 100
 
             # Start CCRP and choose base
-            print('CONSOLE: Choosing Target Base')
+            log('CONSOLE: Choosing Target Base')
             if map_name == "Spain":
                 base_num = 1
             else:
@@ -1146,7 +1161,7 @@ def bot():
                 target_info = get_target_info(target_location)
             if target_info:
                 distance = target_info[1]
-                print(f"CONSOLE: Holding Pattern Angle: {target_info[0]}\nCONSOLE: Holding Pattern Distance: {distance}\nCONSOLE: Heading towards Holding Pattern Point...")
+                log(f"CONSOLE: Holding Pattern Angle: {target_info[0]}\nCONSOLE: Holding Pattern Distance: {distance}\nCONSOLE: Heading towards Holding Pattern Point...")
             else:
                 distance = 1
                 
@@ -1167,19 +1182,21 @@ def bot():
             
             # Reduce throttle and start holding pattern procedure
             holdFor(KEYBINDS["throttleDown"], 0.05)
-            print("CONSOLE: Holding Pattern Initaited")
+            log("CONSOLE: Holding Pattern Initaited")
             while holding_pattern(height) is False and not game_over() and spawned_in():
                 pass
                 
         bomb_flag = False
-        print("Before Bombing loop")
+        if aircraft == "Harrier":
+            pyautogui.scroll(-2)
+            log("CONSOLE: Lowering throttle on Harrier")
+        log("CONSOLE: Entering bombing loop")
         # Bombing loop
         while not game_over() and spawned_in() and base_info is not False:
-            print("IN BOMBING LOOP")
             # Check for CCRP centreline and aim towards it
             centreline_location = pyautogui.locateOnScreen('assets/temp/centreline.png', grayscale=False, confidence=0.7)
             if centreline_location:
-                print("CCRP Line Found")
+                log("Console: CCRP Line Found")
                 center_x, center_y = pyautogui.center(centreline_location)
                 
                 screen_width, screen_height = pyautogui.size()
@@ -1192,12 +1209,12 @@ def bot():
                         press(KEYBINDS['zoom'])
                         zoom = True
                         base_loc = find_target_base()
-                        print(f"CONSOLE: Chose Target Base with Location: {base_loc}")
+                        log(f"CONSOLE: Chose Target Base with Location: {base_loc}")
                     else:
                         base_loc_new = find_target_base()
                         # Swap bases to new location
                         if base_loc_new != base_loc:
-                            print(f"CONSOLE: Chose New Target Base with Location: {base_loc_new}")
+                            log(f"CONSOLE: Chose New Target Base with Location: {base_loc_new}")
                             base_loc = base_loc_new
             
             # Guide by coordinates
@@ -1210,17 +1227,17 @@ def bot():
                     old_base_info = base_info
                 base_info = get_base_info(base_loc)
                 if base_info == False and old_base_info[1] >= 0.07:
-                    print(f"CONSOLE: Base has been stolen, retargeting...")
+                    log(f"CONSOLE: Base has been stolen, retargeting...")
                     # Zoom out
                     # If further than 0.3, retarget
                     # If closer, head to holding pattern and throttle down
                 elif base_info:
-                    print(f"CONSOLE: Base Distance is: {base_info[1]}")
+                    log(f"CONSOLE: Base Distance is: {base_info[1]}")
                     if base_info[0] >= 100:
-                        print("CONSOLE: Base has been Destroyed")
+                        log("CONSOLE: Base has been Destroyed")
                         break
                 elif not base_info:
-                    print("CONSOLE: Base has been Destroyed")
+                    log("CONSOLE: Base has been Destroyed")
                     break
 
             # Set new height
@@ -1245,20 +1262,20 @@ def bot():
                 if not brake_flag and base_info[1] <= map_distance:
                     brake_flag = True
                     if throttle == "Slow":
-                        print("Slowing down")
+                        log("Slowing down")
                         pyautogui.scroll(-2)
                     if brake != "No":
-                        print('CONSOLE: Deploying Airbrake')
+                        log('CONSOLE: Deploying Airbrake')
                         press(KEYBINDS['airbrake'])
                         if brake == "Tap":
                             press(KEYBINDS['airbrake'])
-                            print('CONSOLE: Retracting Airbrake')
+                            log('CONSOLE: Retracting Airbrake')
                         else:
                             # Retract airbrakes when under Mach 1
                             mach = 1.1
                             while mach >= 1.0:
                                 mach = get_mach()
-                            print('CONSOLE: Retracting Airbrake')
+                            log('CONSOLE: Retracting Airbrake')
                             press(KEYBINDS['airbrake'])
             
         
@@ -1272,9 +1289,9 @@ def bot():
             zoom = False
 
             if suicide:
-                print("CONSOLE: Heading towards Enemy Airfield")
+                log("CONSOLE: Heading towards Enemy Airfield")
             else:
-                print("CONSOLE: Heading towards Friendly Airfield")
+                log("CONSOLE: Heading towards Friendly Airfield")
                 time.sleep(1)
                 move_mouse_by(int(-800 * scaling_factor), 0)
                 time.sleep(1)
@@ -1317,7 +1334,7 @@ def bot():
                 distance_to_airfield = field_data[1]
                 if distance_to_airfield >= 0.04:
                     move_mouse_by(int(field_data[0] * 10 * scaling_factor), 0)
-                print(f"Airfield is {distance_to_airfield} distance away")
+                log(f"Airfield is {distance_to_airfield} distance away")
                 
                 # Airbrake and pitch down when close to the airfield
                 if not suicide and distance_to_airfield <= 0.12:
@@ -1353,19 +1370,19 @@ def bot():
         # Vehicle has been destroyed, J out
         if pyautogui.locateOnScreen('assets/temp/j_out.png', grayscale=False, confidence=0.85) != None:
             holdFor('j', 4)
-            print("CONSOLE: Aircraft Downed: J'ing out")
+            log("CONSOLE: Aircraft Downed: J'ing out")
             time.sleep(1)
         
         while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.85) == None and pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) == None:
-            print('CONSOLE: Waiting on To Hangar/Return To Hangar/OK')
+            log('CONSOLE: Waiting on To Hangar/Return To Hangar/OK')
             if pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.85) != None:
-                print('CONSOLE: Battle Trophy')
+                log('CONSOLE: Battle Trophy')
                 press(KEYBINDS['enter'])
             time.sleep(2)
 
         # Return to Hangar appears
         if pyautogui.locateCenterOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.85) != None:
-            print('CONSOLE: Found Return To Hangar after Aircraft Downed')
+            log('CONSOLE: Found Return To Hangar after Aircraft Downed')
             while pyautogui.locateCenterOnScreen('assets/temp/return_to_hangar.png', grayscale=False, confidence=0.85) != None:
                 move_mouse_to_image('assets/temp/return_to_hangar.png')
                 click_mouse()
@@ -1374,12 +1391,12 @@ def bot():
 
         # Wait for to Hangar or OK to appear
         while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) == None:
-            print('CONSOLE: Waiting on To Hangar/OK')
+            log('CONSOLE: Waiting on To Hangar/OK')
             if pyautogui.locateOnScreen('assets/temp/trophy.png', grayscale=False, confidence=0.85) != None:
-                print('CONSOLE: Battle Trophy')
+                log('CONSOLE: Battle Trophy')
                 press(KEYBINDS['enter'])
             if pyautogui.locateOnScreen('assets/temp/decal.png', grayscale=False, confidence=0.85) != None:
-                print('CONSOLE: Decal')
+                log('CONSOLE: Decal')
                 move_mouse_to_image('assets/temp/decal.png')
                 click_mouse()
                 move_mouse_to(100, 100)
@@ -1388,14 +1405,14 @@ def bot():
 
         if pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.95) != None:
             while pyautogui.locateCenterOnScreen('assets/temp/to_hangar.png', grayscale=False, confidence=0.85) != None:
-                print('CONSOLE: Clicking To Hangar')
+                log('CONSOLE: Clicking To Hangar')
                 move_mouse_to_image('assets/temp/to_hangar.png')
                 click_mouse()
                 move_mouse_to(100, 100)
                 time.sleep(3)
         elif pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.95) != None:
             while pyautogui.locateCenterOnScreen('assets/temp/ok.png', grayscale=False, confidence=0.85) != None:
-                print('CONSOLE: Clicking OK')
+                log('CONSOLE: Clicking OK')
                 move_mouse_to_image('assets/temp/ok.png')
                 click_mouse()
                 move_mouse_to(100, 100)
@@ -1429,7 +1446,17 @@ def main():
         pc_info = get_pc_info()
 
         if pc_info:
+
             url = os.getenv('server_ip')
+
+            if not url:
+                messagebox.showinfo("Error", "check_key(): Please check the server IP")
+                log("CONSOLE: Unable to retrieve the server IP from .env")
+                return False
+            elif not url.endswith("ngrok-free.app/verify"):
+                messagebox.showinfo("Error", "check_key(): Please check the server IP")
+                log("CONSOLE: Incorrect server IP detected")
+                return False
 
             pc_name, pc_cpu_name = pc_info
             # JSON payload for the request
@@ -1441,13 +1468,25 @@ def main():
 
             response = requests.post(url, json=payload)
 
-            if response.text == "True":
-                return True
+            if response.status_code == 404:
+                messagebox.showinfo("Error", "check_key(): Server IP is incorrect\nPlease check announcements in Discord for the new server IP")
+                log("CONSOLE: Incorrect server IP from .env")
+                return False
+            elif response.status_code == 200:
+                encrypted_response = response.text.encode()
+    
+                # Decrypt the response using the secret key
+                decrypted_response = cipher_suite.decrypt(encrypted_response).decode()
+
+                if decrypted_response == "True":
+                    return True
+            messagebox.showinfo("Error", "Incorrect Key")
+            log("CONSOLE: Incorrect key")
             return False
 
         else:
             messagebox.showinfo("Error", "check_key(): Unable to get PC information")
-            print("CONSOLE: Unable to retrieve PC information")
+            log("CONSOLE: Unable to retrieve PC information")
             return False
 
     def get_pc_info():
@@ -1538,7 +1577,7 @@ def main():
             while True:
                 if keyboard.is_pressed('q'):
                     # handle the 'q' key press
-                    print("CONSOLE: Exiting program")
+                    log("CONSOLE: Exiting program")
                     # Quit the program
                     time.sleep(1)
                     elapsed_time = get_elapsed_time(launch_time)
@@ -1552,13 +1591,12 @@ def main():
 
                     # Format the time as HH:MM:SS
                     formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-                    print(f'CONSOLE: Bot was running for: {formatted_time}')
+                    log(f'CONSOLE: Bot was running for: {formatted_time}')
 
                     delete_temp_files()
                     end_program()
-        
         elif not valid_key:
-            messagebox.showinfo("Error", "Incorrect Key")
+            pass
         elif resolution is None:
             messagebox.showinfo("Error", "Please Choose a Resolution")
         elif bot_mode == "preset" and aircraft is None:
@@ -1587,7 +1625,7 @@ def main():
         
 
     def choose_aircraft(choice):
-        print("Aircraft Chosen: ", choice)
+        log(f"Aircraft Chosen: {choice}")
         aircrafts = {
             'Kfir Canard (IS)': 'Kfir',
             'F-4F (GR)': 'F-4F',
@@ -1596,13 +1634,15 @@ def main():
             'Mirage 5F (FR)' : 'Mirage-5F',
             'F-84F (FR)' : 'F-84F',
             'Su-25k (RU)' : 'Su-25k',
-            'F-4E (US)' : 'F-4E'
+            'F-4E (US)' : 'F-4E',
+            'Harrier (ANY)' : 'Harrier',
+            'Tornado IDS (GR)' : 'Tornado-IDS'
         }
         global aircraft
         aircraft = aircrafts[choice]
 
     def choose_brakes(choice):
-        print("Brakes Chosen: ", choice)
+        log(f"Brakes Chosen: {choice}")
         brakes = {
             'No Airbrake': 'No',
             'Tap Airbrake': 'Tap',
@@ -1612,7 +1652,7 @@ def main():
         brake = brakes[choice]
     
     def choose_throttle(choice):
-        print("Throttle Chosen: ", choice)
+        log(f"Throttle Chosen: {choice}")
         throttles = {
             'Full Throttle': 'Full',
             'Kill Afterburner': 'Slow',
@@ -1781,7 +1821,7 @@ def main():
     aircraft_var_home = ctk.StringVar(value="Select Aircraft")  # set initial value
 
     aircraft_box_home = ctk.CTkComboBox(master=frame,
-                                        values=["Kfir Canard (IS)", "F-4F (GR)", "MiG-23BN (GR)", "Milan (FR)", "Mirage 5F (FR)", "F-84F (FR)", "Su-25k (RU)", "F-4E (US)"],
+                                        values=["Kfir Canard (IS)", "F-4F (GR)", "MiG-23BN (GR)", "Milan (FR)", "Mirage 5F (FR)", "F-84F (FR)", "Su-25k (RU)", "F-4E (US)", "Harrier (ANY)", "Tornado IDS (GR)"],
                                         command=choose_aircraft,
                                         variable=aircraft_var_home)
     aircraft_box_home.pack(padx=20, pady=10)
@@ -1893,7 +1933,7 @@ def main():
         try:
             subprocess.Popen(["notepad.exe", file_path])
         except FileNotFoundError:
-            print("Notepad not found. Make sure Notepad is installed on your system.")
+            messagebox.showinfo("Error", "Notepad not found. Make sure Notepad is installed on your system.")
     
     def change_keybinds():
         file_path = "data/keybinds.txt"
@@ -1901,7 +1941,7 @@ def main():
         try:
             subprocess.Popen(["notepad.exe", file_path])
         except FileNotFoundError:
-            print("Notepad not found. Make sure Notepad is installed on your system.")
+            messagebox.showinfo("Error", "Notepad not found. Make sure Notepad is installed on your system.")
         
     def change_heights():
         file_path = "data/heights.txt"
@@ -1909,7 +1949,7 @@ def main():
         try:
             subprocess.Popen(["notepad.exe", file_path])
         except FileNotFoundError:
-            print("Notepad not found. Make sure Notepad is installed on your system.")
+            messagebox.showinfo("Error", "Notepad not found. Make sure Notepad is installed on your system.")
 
     chat_phrases_button_settings = ctk.CTkButton(master=frame3, text="Change Chat Phrases", command=change_chat_phrases)
     chat_phrases_button_settings.pack(pady=12, padx=10)
