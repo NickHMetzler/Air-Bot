@@ -35,6 +35,7 @@ import pytesseract
 import subprocess
 import warnings
 import sys
+import webbrowser
 
 # Decryption Key
 SECRET_KEY = b'EDES-yzmYgDT1TYC10ttk-bVNSpHYvGuyl1F3oVcCbY='
@@ -1440,23 +1441,30 @@ def main():
     def key_exists(key):
         key_var.set(key)
 
+    def check_server_ip():
+        webbrowser.open("https://discord.gg/an5QUdPbkB")
 
     def check_key(key):
         # Get the user's IP address
+        url = os.getenv('server_ip')
+
+        if not url:
+            messagebox_response = messagebox.askquestion("Error", "check_key(): Server IP does not exist in .env\nPlease check announcements in Discord for the new server IP\n\nDo you want to check the Discord server for the new IP?")
+
+            if messagebox_response == "yes":
+                check_server_ip()
+            log("CONSOLE: Unable to retrieve the server IP from .env")
+            return False
+        elif not url.endswith("ngrok-free.app/verify"):
+            messagebox_response = messagebox.askquestion("Error", "check_key(): Server IP is incorrect in .env\nPlease check announcements in Discord for the new server IP\n\nDo you want to check the Discord server for the new IP?")
+
+            if messagebox_response == "yes":
+                check_server_ip()
+            return False
+        
         pc_info = get_pc_info()
 
         if pc_info:
-
-            url = os.getenv('server_ip')
-
-            if not url:
-                messagebox.showinfo("Error", "check_key(): Please check the server IP")
-                log("CONSOLE: Unable to retrieve the server IP from .env")
-                return False
-            elif not url.endswith("ngrok-free.app/verify"):
-                messagebox.showinfo("Error", "check_key(): Please check the server IP")
-                log("CONSOLE: Incorrect server IP detected")
-                return False
 
             pc_name, pc_cpu_name = pc_info
             # JSON payload for the request
@@ -1469,14 +1477,21 @@ def main():
             response = requests.post(url, json=payload)
 
             if response.status_code == 404:
-                messagebox.showinfo("Error", "check_key(): Server IP is incorrect\nPlease check announcements in Discord for the new server IP")
+                messagebox_response = messagebox.askquestion("Error", "check_key(): Server IP is incorrect in .env\nPlease check announcements in Discord for the new server IP\n\nDo you want to check the Discord server for the new IP?")
+
+                # Handle the user's choice
+                if messagebox_response == "yes":
+                    check_server_ip()
+
                 log("CONSOLE: Incorrect server IP from .env")
                 return False
+            
             elif response.status_code == 200:
                 encrypted_response = response.text.encode()
     
                 # Decrypt the response using the secret key
                 decrypted_response = cipher_suite.decrypt(encrypted_response).decode()
+                print(f"Decrypted: {decrypted_response}")
 
                 if decrypted_response == "True":
                     return True
