@@ -1,6 +1,6 @@
-# Naval_Bot.py
+# Air_Bot.py
 # Plays War Thunder Air RB to automatically generate Silver Lions (In Game Currency) and Research Points
-# 2023-09-29
+# 2023-10-10
 # Nicolas Metzler
 
 # Import Statements
@@ -1810,7 +1810,6 @@ def main():
 
     # Bind the function to the text change event of the entry widget
     key_entry_home.bind("<KeyRelease>", update_key_var)
-
 
     # Resolution Setting
     resolution_var = os.getenv("resolution")
