@@ -65,8 +65,7 @@ pytesseract.pytesseract.tesseract_cmd = r'Tesseract-OCR/tesseract.exe'
 # PyAutoGui Failsafe off
 pyautogui.FAILSAFE = False
 
-# Disable "libpng warning: iCCP: known incorrect sRGB profile" warning
-warnings.filterwarnings("ignore", category=UserWarning, module="PIL.PngImagePlugin")
+warnings.filterwarnings("ignore", module="libpng")
 
 ###############################
 #          Constants          #
@@ -264,6 +263,44 @@ ctypes.pointer(extra) )
 #######################
 
 def game_over():
+    # Check for the presence of each image
+    # Check if any of the images are not found
+    image1 = pyautogui.locateCenterOnScreen("assets/temp/j_out.png", grayscale=False, confidence=0.75)
+    image2 = pyautogui.locateCenterOnScreen("assets/temp/to_hangar.png", grayscale=False, confidence=0.75)
+    image3 = pyautogui.locateCenterOnScreen("assets/temp/return_to_hangar.png", grayscale=False, confidence=0.75)
+    image4 = pyautogui.locateCenterOnScreen("assets/temp/trophy.png", grayscale=False, confidence=0.75)
+    image5 = pyautogui.locateCenterOnScreen("assets/temp/ok.png", grayscale=False, confidence=0.75)
+
+    if image1 is None:
+        print("Image 'j_out.png' not found")
+    else:
+        print("Image 'j_out.png' found")
+        return False
+
+    if image2 is None:
+        print("Image 'to_hangar.png' not found")
+    else:
+        print("Image 'to_hangar.png' found")
+        return False
+
+    if image3 is None:
+        print("Image 'return_to_hangar.png' not found")
+    else:
+        print("Image 'return_to_hangar.png' found")
+        return False
+
+    if image4 is None:
+        print("Image 'trophy.png' not found")
+    else:
+        print("Image 'trophy.png' found")
+        return False
+
+    if image5 is None:
+        print("Image 'ok.png' not found")
+    else:
+        print("Image 'ok.png' found")
+        return False
+
     if pyautogui.locateCenterOnScreen("assets/temp/j_out.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/to_hangar.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/return_to_hangar.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/trophy.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/ok.png", grayscale=False, confidence=0.75) == None:
         return False
     else:
@@ -393,10 +430,14 @@ def get_map_info():
 def spawned_in():
     json_data = get_location_data()
     if json_data:
+        print("CONSOLE CHECK: spawned_in() has JSON")
         player = next((obj for obj in json_data if obj["icon"] == "Player"), None)
         if player:
+            print("CONSOLE CHECK: spawned_in() found icon = Player")
             return True
+        print("CONSOLE CHECK: spawned_in() DID NOT FIND icon = Player")
         return False
+    print("CONSOLE CHECK: spawned_in() has no JSON")
 
 # Check if on the spawn screen
 def spawn_screen():
@@ -584,17 +625,17 @@ def get_friendly_field_info(map_name):
                     slope_es = calculate_slope(field["ex"], field["ey"], field["sx"], field["sy"])
             log(slope_xy)
             log(slope_es)
-            if slope_xy > slope_es + 0.5 or slope_xy < slope_es - 0.5:
+            if slope_xy > float(slope_es) + 0.5 or float(slope_xy) < slope_es - 0.5:
                 if "ALT" in map_name:
                     if slope_xy < slope_es:
-                        glide_x, glide_y = field["ex"] - 0.2, field["ey"] - 0.2
+                        glide_x, glide_y = float(field["ex"]) - 0.2, float(field["ey"]) - 0.2
                     elif slope_xy > slope_es:
-                        glide_x, glide_y = field["ex"] + 0.2, field["ey"] - 0.2
+                        glide_x, glide_y = float(field["ex"]) + 0.2, float(field["ey"]) - 0.2
                 else:
                     if slope_xy < slope_es:
-                        glide_x, glide_y = field["sx"] + 0.2, field["sy"] + 0.2
+                        glide_x, glide_y = float(field["sx"]) + 0.2, float(field["sy"]) + 0.2
                     elif slope_xy > slope_es:
-                        glide_x, glide_y = field["sx"] - 0.2, field["sy"] + 0.2
+                        glide_x, glide_y = float(field["sx"]) - 0.2, float(field["sy"]) + 0.2
                 log(f"{glide_x}, {glide_y}")
                 angle = math.atan2(glide_y - y, glide_x - x)
                 facing_angle = math.atan2(dy, dx)
@@ -1068,6 +1109,8 @@ def bot():
 
         # Air Spawn
         else:
+            if city:
+                ground = 200
             # Wait to Spawn in
             while not spawn_screen():
                 pass
