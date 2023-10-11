@@ -625,17 +625,17 @@ def get_friendly_field_info(map_name):
                     slope_es = calculate_slope(field["ex"], field["ey"], field["sx"], field["sy"])
             log(slope_xy)
             log(slope_es)
-            if slope_xy > float(slope_es) + 0.5 or float(slope_xy) < slope_es - 0.5:
+            if slope_xy > slope_es + 0.5 or slope_xy < slope_es - 0.5:
                 if "ALT" in map_name:
                     if slope_xy < slope_es:
-                        glide_x, glide_y = float(field["ex"]) - 0.2, float(field["ey"]) - 0.2
+                        glide_x, glide_y = field["ex"] - 0.2, field["ey"] - 0.2
                     elif slope_xy > slope_es:
-                        glide_x, glide_y = float(field["ex"]) + 0.2, float(field["ey"]) - 0.2
+                        glide_x, glide_y = field["ex"] + 0.2, field["ey"] - 0.2
                 else:
                     if slope_xy < slope_es:
-                        glide_x, glide_y = float(field["sx"]) + 0.2, float(field["sy"]) + 0.2
+                        glide_x, glide_y = field["sx"] + 0.2, field["sy"] + 0.2
                     elif slope_xy > slope_es:
-                        glide_x, glide_y = float(field["sx"]) - 0.2, float(field["sy"]) + 0.2
+                        glide_x, glide_y = field["sx"] - 0.2, field["sy"] + 0.2
                 log(f"{glide_x}, {glide_y}")
                 angle = math.atan2(glide_y - y, glide_x - x)
                 facing_angle = math.atan2(dy, dx)
@@ -846,9 +846,9 @@ def delete_temp_files():
 
 # Function to log to console and file
 def log(message):
-    print(message)  # Print to the console
+    print(str(message))  # Print to the console
     with open('data/console_log.txt', 'a') as f:
-        f.write(message + '\n')  # Append to the log file
+        f.write(str(message) + '\n')  # Append to the log file
 
 # Function to calculate the elapsed time
 def get_elapsed_time(startTime):
