@@ -40,6 +40,10 @@ import webbrowser
 SECRET_KEY = b'EDES-yzmYgDT1TYC10ttk-bVNSpHYvGuyl1F3oVcCbY='
 cipher_suite = Fernet(SECRET_KEY)
 
+# Version
+version_float = 1.1
+version_str = str(version_float)
+
 # Global Variables
 resolution = None
 aircraft = None
@@ -47,6 +51,8 @@ throttle = None
 brake = None
 slope_es = None
 suicide = False
+flare = False
+chat = True
 pitch_multiplier = 1.0
 distance_multiplier = 1.0
 dotenv_path = ".env"
@@ -271,40 +277,30 @@ def game_over():
     image4 = pyautogui.locateCenterOnScreen("assets/temp/trophy.png", grayscale=False, confidence=0.75)
     image5 = pyautogui.locateCenterOnScreen("assets/temp/ok.png", grayscale=False, confidence=0.75)
 
-    if image1 is None:
-        print("Image 'j_out.png' not found")
-    else:
-        print("Image 'j_out.png' found")
+    if image1 is not None:
+        print("CONSOLE: game_over(): Image 'j_out.png' found")
         return False
 
-    if image2 is None:
-        print("Image 'to_hangar.png' not found")
-    else:
-        print("Image 'to_hangar.png' found")
+    if image2 is not None:
+        print("CONSOLE: game_over(): Image 'to_hangar.png' found")
         return False
 
-    if image3 is None:
-        print("Image 'return_to_hangar.png' not found")
-    else:
-        print("Image 'return_to_hangar.png' found")
+    if image3 is not None:
+        print("CONSOLE: game_over(): Image 'return_to_hangar.png' found")
         return False
 
-    if image4 is None:
-        print("Image 'trophy.png' not found")
-    else:
-        print("Image 'trophy.png' found")
+    if image4 is not None:
+        print("CONSOLE: game_over(): Image 'trophy.png' found")
         return False
 
-    if image5 is None:
-        print("Image 'ok.png' not found")
-    else:
-        print("Image 'ok.png' found")
+    if image5 is not None:
+        print("CONSOLE: game_over(): Image 'ok.png' found")
         return False
 
-    if pyautogui.locateCenterOnScreen("assets/temp/j_out.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/to_hangar.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/return_to_hangar.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/trophy.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/ok.png", grayscale=False, confidence=0.75) == None:
-        return False
-    else:
-        return True
+    #if pyautogui.locateCenterOnScreen("assets/temp/j_out.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/to_hangar.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/return_to_hangar.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/trophy.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/ok.png", grayscale=False, confidence=0.75) == None:
+        #return False
+    #else:
+    return True
 
 # Temp Function (Screenshots the screen)
 def screenshot_screen():
@@ -430,14 +426,10 @@ def get_map_info():
 def spawned_in():
     json_data = get_location_data()
     if json_data:
-        print("CONSOLE CHECK: spawned_in() has JSON")
         player = next((obj for obj in json_data if obj["icon"] == "Player"), None)
         if player:
-            print("CONSOLE CHECK: spawned_in() found icon = Player")
             return True
-        print("CONSOLE CHECK: spawned_in() DID NOT FIND icon = Player")
         return False
-    print("CONSOLE CHECK: spawned_in() has no JSON")
 
 # Check if on the spawn screen
 def spawn_screen():
@@ -948,16 +940,17 @@ def bot():
     # Preset parameters
     if bot_mode == "preset":
         aircraft_settings = {
-            "F-84F": {"brake": "No", "throttle": "Full", "airspawn": True},
-            "Su-25k": {"brake": "No", "throttle": "Full", "airspawn": False},
-            "Su-17M2": {"brake": "No", "throttle": "Slow", "airspawn": False},
-            "Milan": {"brake": "No", "throttle": "Full", "airspawn": False},
-            "Mirage-5F": {"brake": "No", "throttle": "Full", "airspawn": False},
-            "F-4E": {"brake": "Tap", "throttle": "Slow", "airspawn": False},
-            "F-4F": {"brake": "Tap", "throttle": "Slow", "airspawn": False},
-            "MiG-23BN": {"brake": "Tap", "throttle": "Slow", "airspawn": False},
-            "Harrier": {"brake": "No", "throttle": "Full", "airspawn": False},
-            "Tornado-IDS": {"brake": "Hold", "throttle": "Slow", "airspawn": False},
+            "F-84F": {"brake": "No", "throttle": "Full", "flare": False, "airspawn": True},
+            "Su-25k": {"brake": "No", "throttle": "Full", "flare": True, "airspawn": False},
+            "Su-17M2": {"brake": "No", "throttle": "Slow", "flare": False, "airspawn": False},
+            "Milan": {"brake": "No", "throttle": "Full", "flare": False, "airspawn": False},
+            "Mirage-5F": {"brake": "No", "throttle": "Full", "flare": False, "airspawn": False},
+            "F-4E": {"brake": "Tap", "throttle": "Slow", "flare": True, "airspawn": False},
+            "F-4F": {"brake": "Tap", "throttle": "Slow", "flare": True, "airspawn": False},
+            "MiG-23BN": {"brake": "Tap", "throttle": "Slow", "flare": False, "airspawn": False},
+            "Harrier": {"brake": "No", "throttle": "Full", "flare": True, "airspawn": False},
+            "Tornado-IDS": {"brake": "No", "throttle": "Full", "flare": True, "airspawn": False},
+            "A-4": {"brake": "Tap", "throttle": "Slow", "flare": True, "airspawn": True}
         }
 
         default_settings = {"brake": "Full", "throttle": "Slow", "airspawn": False}
@@ -1058,7 +1051,7 @@ def bot():
             ground = get_attitude()[0]
             holdFor(KEYBINDS['throttleUp'], 2)
             chat_check = random.randint(0, 2)
-            if chat_check <= 0:
+            if chat and chat_check <= 0:
                 press('enter')
                 press('tab')
                 typer(map_name)
@@ -1262,6 +1255,7 @@ def bot():
             
             # Guide by coordinates
             elif base_info and not brake_flag:
+                log(f"CONSOLE: CCRP Line not found, guiding by coordinates")
                 move_mouse_by(int(base_info[0] * 10 * scaling_factor), 0)
             
             # Get the base information
@@ -1302,24 +1296,30 @@ def bot():
                     # Hold down the bombing button
                     hold(KEYBINDS['bomb'])
                     bomb_flag = True
-                if not brake_flag and base_info[1] <= map_distance:
-                    brake_flag = True
-                    if throttle == "Slow":
-                        log("Slowing down")
+                if base_info[1] <= map_distance:
+                    if not brake_flag:
+                        brake_flag = True
+                        if throttle == "Slow":
+                            log("Slowing down")
+                            pyautogui.scroll(-2)
+                        if brake != "No":
+                            log('CONSOLE: Deploying Airbrake')
+                            press(KEYBINDS['airbrake'])
+                            if brake == "Tap":
+                                press(KEYBINDS['airbrake'])
+                                log('CONSOLE: Retracting Airbrake')
+                            else:
+                                # Retract airbrakes when under Mach 1
+                                mach = 1.1
+                                while mach >= 1.0:
+                                    mach = get_mach()
+                                log('CONSOLE: Retracting Airbrake')
+                                press(KEYBINDS['airbrake'])
+                    elif flare:
+                        log('CONSOLE: Popping Flares')
                         pyautogui.scroll(-2)
-                    if brake != "No":
-                        log('CONSOLE: Deploying Airbrake')
-                        press(KEYBINDS['airbrake'])
-                        if brake == "Tap":
-                            press(KEYBINDS['airbrake'])
-                            log('CONSOLE: Retracting Airbrake')
-                        else:
-                            # Retract airbrakes when under Mach 1
-                            mach = 1.1
-                            while mach >= 1.0:
-                                mach = get_mach()
-                            log('CONSOLE: Retracting Airbrake')
-                            press(KEYBINDS['airbrake'])
+                        pyautogui.scroll(2)
+
             
         
         # After Bombing Logic
@@ -1341,9 +1341,10 @@ def bot():
                 move_mouse_by(int(-800 * scaling_factor), 0)
                 time.sleep(1)
                 move_mouse_by(int(-800 * scaling_factor), 0)
-                press('t')
-                press('4')
-                press('4')
+                if chat:
+                    press('t')
+                    press('4')
+                    press('4')
             
             # Pitch up
             if mode == "slow":
@@ -1392,9 +1393,10 @@ def bot():
                     if distance_to_airfield <= 0.05 and not brake_flag:
                         press(KEYBINDS['airbrake'])
                         brake_flag = True
-                        press('t')
-                        press('4')
-                        press('3')
+                        if chat:
+                            press('t')
+                            press('4')
+                            press('3')
                 elif suicide and not brake_flag and distance_to_airfield <= 0.04:
                     press(KEYBINDS['airbrake'])
                     move_mouse_by(0, int(attitude[0]/4))
@@ -1562,7 +1564,9 @@ def main():
         global brake
         global throttle
         global suicide
+        global flare
         global dotenv_path
+        global chat
         valid_key = check_key(key)
         if bot_mode == "preset" and agreement_checkbox_var.get() and valid_key and resolution is not None and aircraft is not None:
             # Prompt the user to Alt + Tab to War Thunder
@@ -1576,6 +1580,16 @@ def main():
                 mode = "slow"
             else:
                 mode = "rush"
+
+            if flares_checkbox_var.get():
+                flare = True
+
+            if chat_checkbox_var.get():
+                chat = True
+                dotenv.set_key(dotenv_path, "chat", "1")
+            else:
+                chat = False
+                dotenv.set_key(dotenv_path, "chat", "0")
 
             if suicide_checkbox_var.get():
                 suicide = True
@@ -1693,7 +1707,8 @@ def main():
             'Su-25k (RU)' : 'Su-25k',
             'F-4E (US)' : 'F-4E',
             'Harrier (ANY)' : 'Harrier',
-            'Tornado IDS (GR)' : 'Tornado-IDS'
+            'Tornado IDS (GR)' : 'Tornado-IDS',
+            'A-4 (ANY)' : 'A-4'
         }
         global aircraft
         aircraft = aircrafts[choice]
@@ -1727,10 +1742,11 @@ def main():
     key_var = tk.StringVar()
     flares_checkbox_var = tk.BooleanVar()
     suicide_checkbox_var = tk.BooleanVar()
+    chat_checkbox_var = tk.BooleanVar()
 
     root.protocol("WM_DELETE_WINDOW", on_window_close)
-    root.geometry("800x750")
-    root.title("War Thunder Air Bot 1.0")
+    root.geometry("800x800")
+    root.title(f"War Thunder Air Bot {version_str}")
 
     # Create the sidebar
     sidebar = ctk.CTkFrame(master=root)
@@ -1806,21 +1822,21 @@ def main():
     logo_label_settings.pack(pady=12, padx=10)
 
     # Menu Titles
-    label_home = ctk.CTkLabel(master=frame, text="Nicks War Thunder Air Bot 1.0\nMain Menu", font=("Roboto", 24))
+    label_home = ctk.CTkLabel(master=frame, text=f"Nicks War Thunder Air Bot {version_str}\nMain Menu", font=("Roboto", 24))
     label_home.pack(pady=12, padx=10)
 
-    label_custom = ctk.CTkLabel(master=frame2, text="Nicks War Thunder Air Bot 1.0\nCustom Menu", font=("Roboto", 24))
+    label_custom = ctk.CTkLabel(master=frame2, text=f"Nicks War Thunder Air Bot {version_str}\nCustom Menu", font=("Roboto", 24))
     label_custom.pack(pady=12, padx=10)
 
-    label_settings = ctk.CTkLabel(master=frame3, text="Nicks War Thunder Air Bot 1.0\nSettings Menu", font=("Roboto", 24))
+    label_settings = ctk.CTkLabel(master=frame3, text=f"Nicks War Thunder Air Bot {version_str}\nSettings Menu", font=("Roboto", 24))
     label_settings.pack(pady=12, padx=10)
 
-    label_heights = ctk.CTkLabel(master=frame4, text="Nicks War Thunder Air Bot 1.0\nMinimum Height Settings Menu", font=("Roboto", 24))
+    label_heights = ctk.CTkLabel(master=frame4, text=f"Nicks War Thunder Air Bot {version_str}\nMinimum Height Settings Menu", font=("Roboto", 24))
     label_heights.pack(pady=12, padx=10)
 
     # Setup and Instructions
     instructions_label_home = ctk.CTkLabel(master=frame,
-                                      text="Preset Setup Instructions:\n1. Go to Hangar and have the appropriate aircraft selected\n2. Select 'Air Realistic Battles'\n3. Ensure you are using Red and Blue default colors\n\nTo end the program, press and hold 'q' at any time",
+                                      text="Preset Setup Instructions:\n1. Go to Hangar and have the appropriate aircraft selected\n2. Select 'Air Realistic Battles'\n3. Ensure you are using Red and Blue default colors and metric values\n\nTo end the program, press and hold 'q' at any time",
                                       font=("Roboto", 15))
     instructions_label_home.pack(pady=12, padx=10)
 
@@ -1877,7 +1893,7 @@ def main():
     aircraft_var_home = ctk.StringVar(value="Select Aircraft")  # set initial value
 
     aircraft_box_home = ctk.CTkComboBox(master=frame,
-                                        values=["Kfir Canard (IS)", "F-4F (GR)", "MiG-23BN (GR)", "Milan (FR)", "Mirage 5F (FR)", "F-84F (FR)", "Su-25k (RU)", "F-4E (US)", "Harrier (ANY)", "Tornado IDS (GR)"],
+                                        values=["Kfir Canard (IS)", "F-4F (GR)", "MiG-23BN (GR)", "Milan (FR)", "Mirage 5F (FR)", "F-84F (FR)", "Su-25k (RU)", "F-4E (US)", "Harrier (ANY)", "Tornado IDS (GR)", "A-4 (ANY)"],
                                         command=choose_aircraft,
                                         variable=aircraft_var_home)
     aircraft_box_home.pack(padx=20, pady=10)
@@ -1913,6 +1929,15 @@ def main():
 
     if suicide_var == "1":
         suicide_checkbox_settings.select()
+    
+    # Chat setting
+    chat_checkbox_settings = ctk.CTkCheckBox(master=frame3, text="Bot will use chat phrases and radio?", variable=chat_checkbox_var)
+    chat_checkbox_settings.pack(pady=12, padx=10)
+
+    chat_var = os.getenv("chat")
+
+    if chat_var == "1":
+        chat_checkbox_settings.select()
     
 
     mode_checkbox_home = ctk.CTkCheckBox(master=frame, text="Use slow method", variable=mode_checkbox_var)
