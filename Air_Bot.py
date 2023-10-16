@@ -278,23 +278,23 @@ def game_over():
     image5 = pyautogui.locateCenterOnScreen("assets/temp/ok.png", grayscale=False, confidence=0.75)
 
     if image1 is not None:
-        print("CONSOLE: game_over(): Image 'j_out.png' found")
+        log("CONSOLE: game_over(): Image 'j_out.png' found")
         return False
 
     if image2 is not None:
-        print("CONSOLE: game_over(): Image 'to_hangar.png' found")
+        log("CONSOLE: game_over(): Image 'to_hangar.png' found")
         return False
 
     if image3 is not None:
-        print("CONSOLE: game_over(): Image 'return_to_hangar.png' found")
+        log("CONSOLE: game_over(): Image 'return_to_hangar.png' found")
         return False
 
     if image4 is not None:
-        print("CONSOLE: game_over(): Image 'trophy.png' found")
+        log("CONSOLE: game_over(): Image 'trophy.png' found")
         return False
 
     if image5 is not None:
-        print("CONSOLE: game_over(): Image 'ok.png' found")
+        log("CONSOLE: game_over(): Image 'ok.png' found")
         return False
 
     #if pyautogui.locateCenterOnScreen("assets/temp/j_out.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/to_hangar.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/return_to_hangar.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/trophy.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/ok.png", grayscale=False, confidence=0.75) == None:
@@ -1235,7 +1235,7 @@ def bot():
             log("CONSOLE: Lowering throttle on Harrier")
         log("CONSOLE: Entering bombing loop")
         # Bombing loop
-        while not game_over() and spawned_in() and base_info is not False:
+        while not game_over() and spawned_in() and base_info is not False and elapsed_time <= 1200:
             # Check for CCRP centreline and aim towards it
             centreline_location = pyautogui.locateOnScreen('assets/temp/centreline.png', grayscale=False, confidence=0.7)
             if centreline_location:
@@ -1326,7 +1326,8 @@ def bot():
                         log('CONSOLE: Popping Flares')
                         pyautogui.scroll(-2)
                         pyautogui.scroll(2)
-
+            
+            elapsed_time = get_elapsed_time(battle_time)   
             
         
         # After Bombing Logic
@@ -1370,7 +1371,7 @@ def bot():
             final = False
 
         # Fly towards enemy Airfield
-        while not game_over() and spawned_in():
+        while not game_over() and spawned_in() and elapsed_time <= 1200:
             attitude = get_attitude()
             if suicide:
                 field_data = get_enemy_field_info()
@@ -1493,11 +1494,12 @@ def main():
         key_var.set(key)
 
     def check_server_ip():
-        webbrowser.open("https://discord.gg/an5QUdPbkB")
+        webbrowser.open("https://discord.gg/rQ8kXFZ8Zk")
 
     def check_key(key):
         # Get the user's IP address
         url = os.getenv('server_ip')
+        message = "False"
 
         if not url:
             messagebox_response = messagebox.askquestion("Error", "check_key(): Server IP does not exist in .env\nPlease check announcements in Discord for the new server IP\n\nDo you want to check the Discord server for the new IP?")
@@ -1511,7 +1513,7 @@ def main():
 
             if messagebox_response == "yes":
                 check_server_ip()
-            return False
+            return (False, message)
         
         pc_info = get_pc_info()
 
@@ -1535,25 +1537,25 @@ def main():
                     check_server_ip()
 
                 log("CONSOLE: Incorrect server IP from .env")
-                return False
+                return (False, message)
             
             elif response.status_code == 200:
                 encrypted_response = response.text.encode()
     
                 # Decrypt the response using the secret key
                 decrypted_response = cipher_suite.decrypt(encrypted_response).decode()
-                print(f"Decrypted: {decrypted_response}")
-
-                if decrypted_response == "True":
-                    return True
+                if "True" in decrypted_response:
+                    # Get how long the key is valid for
+                    message = decrypted_response.split("True ", 1)[1]
+                    return (True, message)
             messagebox.showinfo("Error", "Incorrect Key")
             log("CONSOLE: Incorrect key")
-            return False
+            return (False, message)
 
         else:
             messagebox.showinfo("Error", "check_key(): Unable to get PC information")
             log("CONSOLE: Unable to retrieve PC information")
-            return False
+            return (False, message)
 
     def get_pc_info():
         pc_name = platform.node()
@@ -1574,10 +1576,17 @@ def main():
         global flare
         global dotenv_path
         global chat
-        valid_key = check_key(key)
+        key_check = check_key(key)
+        
+        # Key checking
+        valid_key = False
+        if key_check[0]:
+            valid_key = True
+            duration =  key_check[1]
+
         if bot_mode == "preset" and agreement_checkbox_var.get() and valid_key and resolution is not None and aircraft is not None:
             # Prompt the user to Alt + Tab to War Thunder
-            messagebox.showinfo("Alert", "Please Alt + Tab to War Thunder")
+            messagebox.showinfo("Alert", f"{duration}\nPlease Alt + Tab to War Thunder")
             root.destroy()
             # Allow time for user to Alt + Tab
             time.sleep(5)
@@ -1638,7 +1647,7 @@ def main():
 
         elif bot_mode == "custom" and agreement_checkbox_var.get() and valid_key and resolution is not None and throttle is not None and brake is not None:
             # Prompt the user to Alt + Tab to War Thunder
-            messagebox.showinfo("Alert", "Please Alt + Tab to War Thunder")
+            messagebox.showinfo("Alert", f"{duration}\nPlease Alt + Tab to War Thunder")
             root.destroy()
             # Allow time for user to Alt + Tab
             time.sleep(5)
@@ -1895,7 +1904,6 @@ def main():
     if 'resolution' in os.environ:
         choose_resolution(resolution_var)
 
-    
     # Aircraft drop down
     aircraft_var_home = ctk.StringVar(value="Select Aircraft")  # set initial value
 
