@@ -926,6 +926,11 @@ def bot():
     global pitch_multiplier
     global distance_multiplier
 
+    if not flare:
+        flare_choice = False
+    else:
+        flare_choice = True
+
     # Set scaling factor for mouse inputs based on resolution
     scaling_factor = 1.0
     if resolution == "1440":
@@ -952,6 +957,8 @@ def bot():
             "Tornado-IDS": {"brake": "No", "throttle": "Full", "flare": True, "airspawn": False},
             "A-4": {"brake": "Tap", "throttle": "Slow", "flare": True, "airspawn": True}
         }
+        if not flare_choice:
+            flare = False
 
         default_settings = {"brake": "Full", "throttle": "Slow", "airspawn": False}
         aircraft_data = aircraft_settings.get(aircraft, default_settings)
