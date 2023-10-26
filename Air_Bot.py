@@ -35,6 +35,7 @@ import pytesseract
 import subprocess
 import warnings
 import webbrowser
+import shutil
 
 # Decryption Key
 SECRET_KEY = b'EDES-yzmYgDT1TYC10ttk-bVNSpHYvGuyl1F3oVcCbY='
@@ -279,28 +280,28 @@ def game_over():
 
     if image1 is not None:
         log("CONSOLE: game_over(): Image 'j_out.png' found")
-        return False
+        return True
 
     if image2 is not None:
         log("CONSOLE: game_over(): Image 'to_hangar.png' found")
-        return False
+        return True
 
     if image3 is not None:
         log("CONSOLE: game_over(): Image 'return_to_hangar.png' found")
-        return False
+        return True
 
     if image4 is not None:
         log("CONSOLE: game_over(): Image 'trophy.png' found")
-        return False
+        return True
 
     if image5 is not None:
         log("CONSOLE: game_over(): Image 'ok.png' found")
-        return False
+        return True
 
     #if pyautogui.locateCenterOnScreen("assets/temp/j_out.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/to_hangar.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/return_to_hangar.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/trophy.png", grayscale=False, confidence=0.75) == None and pyautogui.locateCenterOnScreen("assets/temp/ok.png", grayscale=False, confidence=0.75) == None:
         #return False
     #else:
-    return True
+    return False
 
 # Temp Function (Screenshots the screen)
 def screenshot_screen():
@@ -1235,7 +1236,11 @@ def bot():
             log("CONSOLE: Lowering throttle on Harrier")
         log("CONSOLE: Entering bombing loop")
         # Bombing loop
+        elapsed_time = 0
         while not game_over() and spawned_in() and base_info is not False and elapsed_time <= 1200:
+
+            elapsed_time = get_elapsed_time(battle_time)
+
             # Check for CCRP centreline and aim towards it
             centreline_location = pyautogui.locateOnScreen('assets/temp/centreline.png', grayscale=False, confidence=0.7)
             if centreline_location:
@@ -1332,7 +1337,7 @@ def bot():
         
         # After Bombing Logic
         # throttle down and smoke
-        if game_over() == False:
+        if not game_over():
             release(KEYBINDS['bomb'])
             time.sleep(1)
             pyautogui.scroll(-2)
@@ -1372,6 +1377,7 @@ def bot():
 
         # Fly towards enemy Airfield
         while not game_over() and spawned_in() and elapsed_time <= 1200:
+            elapsed_time = get_elapsed_time(battle_time)
             attitude = get_attitude()
             if suicide:
                 field_data = get_enemy_field_info()
@@ -1508,7 +1514,7 @@ def main():
                 check_server_ip()
             log("CONSOLE: Unable to retrieve the server IP from .env")
             return False
-        elif not url.endswith("ngrok-free.app/verify"):
+        elif not url.startswith("https://") and not url.endswith("ngrok-free.app/verify"):
             messagebox_response = messagebox.askquestion("Error", "check_key(): Server IP is incorrect in .env\nPlease check announcements in Discord for the new server IP\n\nDo you want to check the Discord server for the new IP?")
 
             if messagebox_response == "yes":
@@ -1526,7 +1532,7 @@ def main():
                 'users_pc_name': pc_name,
                 'users_pc_cpu' : pc_cpu_name
             }
-
+            
             response = requests.post(url, json=payload)
 
             if response.status_code == 404:
@@ -1546,7 +1552,10 @@ def main():
                 decrypted_response = cipher_suite.decrypt(encrypted_response).decode()
                 if "True" in decrypted_response:
                     # Get how long the key is valid for
-                    message = decrypted_response.split("True ", 1)[1]
+                    try:
+                        message = decrypted_response.split("True ", 1)[1]
+                    except IndexError:
+                        message = "Could not get Key Duration"
                     return (True, message)
             messagebox.showinfo("Error", "Incorrect Key")
             log("CONSOLE: Incorrect key")
