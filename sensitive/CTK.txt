@@ -1,2 +1,0 @@
-C:/Users/nickf/AppData/Local/Programs/Python/Python311/Lib/site-packages/customtkinter
-customtkinter/
